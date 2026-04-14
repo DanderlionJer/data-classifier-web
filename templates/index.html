@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>数据分类分级</h1>
+    <p class="sub">上传 JSON 或 Excel（.xlsx），基于可配置规则输出 1–5 级（演示缺省映射，请后续按制度替换 <code>app/rules/</code>）。</p>
+  </header>
+
+  <main class="layout">
+    <section class="card">
+      <h2>上传</h2>
+      <form id="upload-form" class="form">
+        <label class="file">
+          <input type="file" id="file" name="file" accept=".json,.xlsx,.xls" required />
+          <span>选择文件</span>
+        </label>
+        <button type="submit" class="btn primary">开始分类</button>
+        <a class="btn link" href="/api/sample-json" target="_blank" rel="noopener">示例 JSON</a>
+      </form>
+      <p class="hint">Excel 推荐列：<strong>database, schema, table, column, data_type, comment</strong>（也支持常见中文表头：数据库、表、字段、注释等）。</p>
+      <p id="status" class="status" aria-live="polite"></p>
+    </section>
+
+    <section class="card" id="summary-card" hidden>
+      <h2>级别分布</h2>
+      <div id="summary" class="chips"></div>
+    </section>
+
+    <section class="card full" id="result-card" hidden>
+      <h2>结果</h2>
+      <div class="table-wrap">
+        <table class="grid" id="grid">
+          <thead>
+            <tr>
+              <th>级别</th>
+              <th>库</th>
+              <th>模式</th>
+              <th>表</th>
+              <th>列</th>
+              <th>类型</th>
+              <th>注释</th>
+              <th>标签</th>
+              <th>说明</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById('upload-form');
+    const statusEl = document.getElementById('status');
+    const summaryCard = document.getElementById('summary-card');
+    const summaryEl = document.getElementById('summary');
+    const resultCard = document.getElementById('result-card');
+    const gridBody = document.querySelector('#grid tbody');
+
+    function levelClass(lv) {
+      const n = Number(lv);
+      if (n >= 5) return 'lv5';
+      if (n === 4) return 'lv4';
+      if (n === 3) return 'lv3';
+      if (n === 2) return 'lv2';
+      return 'lv1';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('file');
+      const f = input.files[0];
+      if (!f) return;
+      statusEl.textContent = '处理中…';
+      summaryCard.hidden = true;
+      resultCard.hidden = true;
+      gridBody.innerHTML = '';
+
+      const fd = new FormData();
+      fd.append('file', f);
+      try {
+        const res = await fetch('/api/classify', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) {
+          statusEl.textContent = data.detail || '请求失败';
+          return;
+        }
+        statusEl.textContent = `完成：共 ${data.fields.length} 个字段`;
+
+        const sums = data.summary || {};
+        summaryEl.innerHTML = Object.keys(sums).sort((a,b)=>Number(b)-Number(a)).map(k => {
+          return `<span class="chip ${levelClass(k)}">级别 ${k}：${sums[k]}</span>`;
+        }).join('');
+        summaryCard.hidden = false;
+
+        for (const row of data.fields) {
+          const fld = row.field;
+          const tr = document.createElement('tr');
+          const tags = (row.tags || []).join(', ');
+          const rationale = row.rationale || '';
+          tr.innerHTML = `
+            <td><span class="badge ${levelClass(row.level)}">${row.level}</span></td>
+            <td>${escapeHtml(fld.database)}</td>
+            <td>${escapeHtml(fld.schema ?? fld.schema_name)}</td>
+            <td>${escapeHtml(fld.table)}</td>
+            <td><code>${escapeHtml(fld.column)}</code></td>
+            <td>${escapeHtml(fld.data_type)}</td>
+            <td>${escapeHtml(fld.comment)}</td>
+            <td>${escapeHtml(tags)}</td>
+            <td class="rationale">${escapeHtml(rationale)}</td>`;
+          gridBody.appendChild(tr);
+        }
+        resultCard.hidden = false;
+      } catch (err) {
+        statusEl.textContent = '网络或解析错误';
+        console.error(err);
+      }
+    });
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+  </script>
+</body>
+</html>

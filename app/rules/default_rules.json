@@ -1,0 +1,137 @@
+{
+  "rules": [
+    {
+      "id": "pii_id_card",
+      "name": "national_id",
+      "column_patterns": [
+        "(?i).*(id_card|idcard|identity_card|cert_no|certificate_no|shenfen).*",
+        "(?i).*身份证.*"
+      ],
+      "comment_patterns": ["身份证", "(?i)id.?card"],
+      "tags": ["personal_identifier", "sensitive_cn", "gov_id"],
+      "standard_refs": ["GB/T 35273 sensitive personal info", "PIPL"],
+      "priority": 100
+    },
+    {
+      "id": "pii_phone",
+      "name": "phone",
+      "column_patterns": [
+        "(?i).*(phone|mobile|cell|msisdn|tel_no|telephone).*",
+        "(?i).*手机.*",
+        "(?i).*电话.*"
+      ],
+      "comment_patterns": ["手机", "电话"],
+      "tags": ["personal_identifier", "contact"],
+      "standard_refs": ["GB/T 35273", "GDPR personal data"],
+      "priority": 90
+    },
+    {
+      "id": "pii_email",
+      "name": "email",
+      "column_patterns": ["(?i).*(email|e_mail|mail).*", "(?i).*邮箱.*"],
+      "comment_patterns": ["邮箱", "邮件"],
+      "tags": ["personal_identifier", "contact"],
+      "standard_refs": ["GDPR personal data"],
+      "priority": 85
+    },
+    {
+      "id": "pii_name",
+      "name": "person_name",
+      "column_patterns": [
+        "(?i).*(full_name|real_name|user_name|cust_name|customer_name|legal_name).*",
+        "(?i)^(name|username)$",
+        "(?i).*姓名.*"
+      ],
+      "comment_patterns": ["姓名"],
+      "tags": ["personal_identifier"],
+      "standard_refs": ["GB/T 35273", "GDPR personal data"],
+      "priority": 80
+    },
+    {
+      "id": "pii_bank",
+      "name": "bank_account",
+      "column_patterns": [
+        "(?i).*(bank_card|bank_account|account_no|iban|card_no).*",
+        "(?i).*银行卡.*",
+        "(?i).*账号.*"
+      ],
+      "comment_patterns": ["银行卡", "账户"],
+      "tags": ["financial", "sensitive_cn"],
+      "standard_refs": ["GB/T 35273 sensitive personal info"],
+      "priority": 95
+    },
+    {
+      "id": "health",
+      "name": "health_medical",
+      "column_patterns": [
+        "(?i).*(diagnos|disease|medical|health|patient).*",
+        "(?i).*病历.*",
+        "(?i).*诊断.*"
+      ],
+      "comment_patterns": ["病历", "诊断", "健康"],
+      "tags": ["health", "gdpr_special_category"],
+      "standard_refs": ["GB/T 35273", "GDPR Art.9"],
+      "priority": 95
+    },
+    {
+      "id": "biometric",
+      "name": "biometric",
+      "column_patterns": [
+        "(?i).*(face|fingerprint|iris|voiceprint).*",
+        "(?i).*指纹.*",
+        "(?i).*人脸.*"
+      ],
+      "tags": ["biometric", "sensitive_cn", "gdpr_special_category"],
+      "standard_refs": ["GB/T 35273", "GDPR Art.9"],
+      "priority": 95
+    },
+    {
+      "id": "location",
+      "name": "location_track",
+      "column_patterns": [
+        "(?i).*(gps|latitude|longitude|lng|lat|geo|location).*",
+        "(?i).*轨迹.*",
+        "(?i).*经纬.*"
+      ],
+      "comment_patterns": ["定位", "轨迹"],
+      "tags": ["location_trace", "sensitive_cn"],
+      "standard_refs": ["GB/T 35273 sensitive personal info"],
+      "priority": 90
+    },
+    {
+      "id": "child",
+      "name": "minor",
+      "column_patterns": ["(?i).*(child|minor|under_14).*", "(?i).*未成年.*"],
+      "comment_patterns": ["未成年"],
+      "tags": ["child_data", "sensitive_cn"],
+      "standard_refs": ["GB/T 35273"],
+      "priority": 92
+    },
+    {
+      "id": "password_secret",
+      "name": "credential",
+      "column_patterns": [
+        "(?i).*(password|passwd|pwd|secret|api_key|token|private_key).*",
+        "(?i).*密码.*",
+        "(?i).*密钥.*"
+      ],
+      "tags": ["credential", "security"],
+      "standard_refs": ["internal security baseline"],
+      "priority": 88
+    },
+    {
+      "id": "internal_only",
+      "name": "internal_business",
+      "column_patterns": [
+        "(?i).*(internal|confidential).*",
+        "(?i).*薪资.*",
+        "(?i).*薪酬.*",
+        "(?i).*绩效.*"
+      ],
+      "comment_patterns": ["内部", "机密"],
+      "tags": ["internal_business"],
+      "standard_refs": ["organizational policy TBD"],
+      "priority": 70
+    }
+  ]
+}

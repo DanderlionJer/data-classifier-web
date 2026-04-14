@@ -1,0 +1,19 @@
+{
+  "tag_levels": {
+    "public": 1,
+    "internal_business": 2,
+    "contact": 3,
+    "personal_identifier": 3,
+    "financial": 4,
+    "health": 4,
+    "biometric": 4,
+    "location_trace": 4,
+    "child_data": 4,
+    "sensitive_cn": 4,
+    "gdpr_special_category": 4,
+    "gov_id": 4,
+    "credential": 4,
+    "security": 4,
+    "important_data_placeholder": 5
+  }
+}
