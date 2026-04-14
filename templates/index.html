@@ -9,7 +9,7 @@
 <body>
   <header class="header">
     <h1>数据分类分级</h1>
-    <p class="sub">上传 JSON 或 Excel（.xlsx），基于可配置规则输出 1–5 级（演示缺省映射，请后续按制度替换 <code>app/rules/</code>）。</p>
+    <p class="sub">上传 JSON 或 Excel（.xlsx），按可配置规则输出 1–5 级。级别与标签对齐 <strong>GB/T 35273-2020、PIPL、《数据安全法》、GDPR</strong> 等常见框架（见<a href="/api/compliance-framework" target="_blank" rel="noopener">合规说明 JSON</a>）；正式使用前请法务审定 <code>app/rules/</code>。</p>
   </header>
 
   <main class="layout">
@@ -23,7 +23,7 @@
         <button type="submit" class="btn primary">开始分类</button>
         <a class="btn link" href="/api/sample-json" target="_blank" rel="noopener">示例 JSON</a>
       </form>
-      <p class="hint">Excel 推荐列：<strong>database, schema, table, column, data_type, comment</strong>（也支持常见中文表头：数据库、表、字段、注释等）。</p>
+      <p class="hint">Excel 推荐列：<strong>database, schema, table, column, data_type, comment</strong>（也支持常见中文表头）。</p>
       <p id="status" class="status" aria-live="polite"></p>
     </section>
 

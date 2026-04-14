@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import io
 import json
 from pathlib import Path
 
@@ -14,6 +13,7 @@ from app.ingest import sniff_and_parse
 from app.models import ClassifyResponse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+FRAMEWORK_PATH = BASE_DIR / "app" / "rules" / "compliance_framework.json"
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 app = FastAPI(title="Data classifier", version="0.1.0")
@@ -25,15 +25,24 @@ async def index(request: Request) -> HTMLResponse:
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "数据分类分级（演示）"},
+        {"title": "\u6570\u636e\u5206\u7c7b\u5206\u7ea7\uff08\u56fd\u6807/GDPR\u5bf9\u9f50\u6f14\u793a\uff09"},
     )
+
+
+@app.get("/api/compliance-framework")
+async def compliance_framework() -> JSONResponse:
+    if not FRAMEWORK_PATH.is_file():
+        raise HTTPException(status_code=404, detail="compliance_framework.json missing")
+    with FRAMEWORK_PATH.open(encoding="utf-8") as f:
+        data = json.load(f)
+    return JSONResponse(data)
 
 
 @app.post("/api/classify")
 async def api_classify(file: UploadFile = File(...)) -> JSONResponse:
     raw = await file.read()
     if not raw:
-        raise HTTPException(status_code=400, detail="空文件")
+        raise HTTPException(status_code=400, detail="\u7a7a\u6587\u4ef6")
 
     try:
         fields = sniff_and_parse(file.filename or "upload", raw)
@@ -58,19 +67,19 @@ async def sample_json() -> JSONResponse:
                 "table": "customers",
                 "column": "mobile_phone",
                 "data_type": "varchar(20)",
-                "comment": "手机号",
+                "comment": "\u624b\u673a\u53f7",
             },
             {
                 "database": "crm",
                 "table": "customers",
                 "column": "user_name",
-                "comment": "客户姓名",
+                "comment": "\u5ba2\u6237\u59d3\u540d",
             },
             {
                 "database": "crm",
                 "table": "customers",
                 "column": "created_at",
-                "comment": "创建时间",
+                "comment": "\u521b\u5efa\u65f6\u95f4",
             },
         ]
     }

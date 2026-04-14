@@ -21,3 +21,8 @@ Open http://127.0.0.1:8765
 `{"fields": [{"database":"...","schema":"...","table":"...","column":"...","data_type":"...","comment":"..."}]}`
 
 Or a JSON array of field objects.
+
+## Compliance alignment (reference only)
+
+Structured mapping to **GB/T 35273-2020**, **PIPL**, **DSL** (Data Security Law), and **GDPR** is in `app/rules/compliance_framework.json`. Served at `GET /api/compliance-framework` for tools and audits. Not legal advice.
+

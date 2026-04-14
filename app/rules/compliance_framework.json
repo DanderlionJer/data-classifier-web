@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "version": "1.0",
+    "disclaimer_zh": "本文件用于在系统内对齐常见国标与 GDPR 概念，便于规则设计与审计引用；不构成法律意见，落地前须由法务与数据安全部门审定。",
+    "disclaimer_en": "Technical alignment reference for GB standards and GDPR; not legal advice."
+  },
+  "referenced_standards": [
+    {
+      "code": "GB/T 35273-2020",
+      "title_zh": "信息安全技术 个人信息安全规范",
+      "topics_zh": ["个人信息界定", "敏感个人信息类型示例", "处理活动安全要求"]
+    },
+    {
+      "code": "PIPL",
+      "title_zh": "中华人民共和国个人信息保护法",
+      "topics_zh": ["敏感个人信息", "单独同意", "跨境提供", "未成年人保护"]
+    },
+    {
+      "code": "DSL",
+      "title_zh": "中华人民共和国数据安全法",
+      "topics_zh": ["数据分类分级制度", "重要数据", "核心数据（国家核心数据）"]
+    },
+    {
+      "code": "GDPR",
+      "title_zh": "General Data Protection Regulation (EU)",
+      "topics_zh": ["personal data (Art.4)", "lawfulness (Art.6)", "special categories (Art.9)", "data minimisation"]
+    }
+  ],
+  "levels": {
+    "1": {
+      "name_zh": "公开 / 一般可公开",
+      "summary_zh": "已公开信息，或经评估不构成个人信息/重要数据、可对外披露的数据。",
+      "mapping_hints": ["对标组织公开披露信息", "GDPR: 通常不涉及个人数据或已完成不可逆匿名化（需单独评估）"]
+    },
+    "2": {
+      "name_zh": "内部 / 一般数据",
+      "summary_zh": "仅限组织内部使用的一般业务数据，泄露对权益影响较低。",
+      "mapping_hints": ["《数据安全法》语境下多为一般数据（非重要数据）", "可能含弱标识或聚合统计"]
+    },
+    "3": {
+      "name_zh": "个人信息（一般）",
+      "summary_zh": "可识别特定自然人的一般个人信息，但未落入敏感个人信息典型场景。",
+      "mapping_hints": ["GB/T 35273-2020 个人信息", "GDPR: personal data", "PIPL: 个人信息处理需合法基础与告知"]
+    },
+    "4": {
+      "name_zh": "敏感个人信息 / 特殊类别个人数据 / 高敏安全数据",
+      "summary_zh": "国标下的敏感个人信息典型场景；或 GDPR Art.9 特殊类别；或账户、行踪、生物识别、健康、未成年人等高风险字段；以及密钥类凭据。",
+      "mapping_hints": [
+        "GB/T 35273-2020 敏感个人信息示例",
+        "PIPL 第二十八条等关于敏感个人信息的要求（含单独同意等规则，以正式条文为准）",
+        "GDPR Art.9 special categories + 例外与额外保障",
+        "凭据、密钥类：对齐组织安全基线与等保实践（非单一法条可涵盖）"
+      ]
+    },
+    "5": {
+      "name_zh": "重要数据 / 核心数据（占位）",
+      "summary_zh": "监管或行业目录中的重要数据、核心数据等；或组织定义为最高级别管控的数据。本演示规则未自动识别，仅预留标签 important_data_placeholder。",
+      "mapping_hints": ["《数据安全法》第二十一条等分类分级与重要数据目录", "需结合行业/地区监管清单人工认定"]
+    }
+  },
+  "gb_t_35273_sensitive_personal_information_examples_zh": [
+    "生物识别信息",
+    "宗教信仰信息",
+    "特定身份信息",
+    "医疗健康信息",
+    "金融账户信息",
+    "个人行踪轨迹信息",
+    "不满十四周岁未成年人的个人信息"
+  ],
+  "gdpr_special_categories_art9_topics_zh": [
+    "种族或民族",
+    "政治观点",
+    "宗教或哲学信仰",
+    "工会成员身份",
+    "基因数据、生物特征数据（用于唯一识别）",
+    "健康或性生活相关",
+    "性取向"
+  ],
+  "tag_regulatory_profile": {
+    "public": {
+      "level_default": 1,
+      "gb_t": [],
+      "gdpr": [],
+      "note_zh": "公开或已匿名化评估通过的数据（须单独立项评估）。"
+    },
+    "internal_business": {
+      "level_default": 2,
+      "gb_t": ["内部运营管理相关，可能涉及员工或业务秘密"],
+      "gdpr": ["如涉及欧盟数据主体，仍可能构成 personal data"],
+      "note_zh": "不等同于“非个人数据”，需结合字段判断。"
+    },
+    "contact": {
+      "level_default": 3,
+      "gb_t": ["个人信息（通信联系方式）"],
+      "gdpr": ["personal data"],
+      "pipl": ["个人信息"]
+    },
+    "personal_identifier": {
+      "level_default": 3,
+      "gb_t": ["个人信息"],
+      "gdpr": ["personal data Art.4(1)"],
+      "pipl": ["个人信息"]
+    },
+    "sensitive_cn": {
+      "level_default": 4,
+      "gb_t": ["敏感个人信息（需结合具体字段）"],
+      "pipl": ["敏感个人信息"],
+      "note_zh": "规则命中时常与其他标签并用，表示落入国标敏感场景。"
+    },
+    "gov_id": {
+      "level_default": 4,
+      "gb_t": ["特定身份 / 敏感个人信息典型场景"],
+      "gdpr": ["强标识 personal data；是否 Art.9 视各国解释"],
+      "pipl": ["敏感个人信息（典型）"]
+    },
+    "financial": {
+      "level_default": 4,
+      "gb_t": ["金融账户信息 → 敏感个人信息示例"],
+      "gdpr": ["personal data；高敏处理场景"],
+      "pipl": ["敏感个人信息（金融账户）"]
+    },
+    "health": {
+      "level_default": 4,
+      "gb_t": ["医疗健康 → 敏感个人信息"],
+      "gdpr": ["Art.9 健康相关特殊类别"],
+      "pipl": ["敏感个人信息（医疗健康）"]
+    },
+    "biometric": {
+      "level_default": 4,
+      "gb_t": ["生物识别 → 敏感个人信息"],
+      "gdpr": ["Art.9 生物特征 / 基因等"],
+      "pipl": ["敏感个人信息（生物识别）"]
+    },
+    "location_trace": {
+      "level_default": 4,
+      "gb_t": ["行踪轨迹 → 敏感个人信息"],
+      "gdpr": ["personal data；精确定位常属高敏场景"],
+      "pipl": ["敏感个人信息（行踪轨迹）"]
+    },
+    "child_data": {
+      "level_default": 4,
+      "gb_t": ["不满十四周岁未成年人个人信息"],
+      "gdpr": ["儿童数据需额外保障（成员国细化）"],
+      "pipl": ["未成年人个人信息保护规则"]
+    },
+    "gdpr_special_category": {
+      "level_default": 4,
+      "gdpr": ["Art.9 special categories"],
+      "gb_t": ["可能与敏感个人信息重叠，需个案映射"],
+      "note_zh": "跨境或多法域场景下用于显式标记 GDPR 特殊类别风险。"
+    },
+    "credential": {
+      "level_default": 4,
+      "gb_t": [],
+      "gdpr": ["如可关联个人则仍可能是 personal data"],
+      "note_zh": "安全法与等保语境下的高敏资产，不等同于“敏感个人信息”但需同级或更严管控。"
+    },
+    "security": {
+      "level_default": 4,
+      "note_zh": "密钥、令牌等安全资产；对齐组织安全制度。"
+    },
+    "important_data_placeholder": {
+      "level_default": 5,
+      "dsl": ["重要数据 / 核心数据（须目录与认定程序）"],
+      "note_zh": "演示占位；真实项目应接入监管或行业清单。"
+    }
+  }
+}
