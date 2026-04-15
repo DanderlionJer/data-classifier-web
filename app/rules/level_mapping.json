@@ -1,9 +1,15 @@
 {
   "tag_levels": {
     "public": 1,
+    "login_alias": 2,
     "internal_business": 2,
+    "internal_surrogate_id": 2,
+    "identifier_technical": 2,
     "contact": 3,
     "personal_identifier": 3,
+    "device_network": 3,
+    "vehicle_plate": 3,
+    "ad_identifier": 3,
     "financial": 4,
     "health": 4,
     "biometric": 4,
@@ -14,6 +20,8 @@
     "gov_id": 4,
     "credential": 4,
     "security": 4,
+    "tax_personal": 4,
+    "criminal_justice": 4,
     "important_data_placeholder": 5
   }
 }

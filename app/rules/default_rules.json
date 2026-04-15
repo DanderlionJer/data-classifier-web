@@ -4,134 +4,663 @@
       "id": "pii_id_card",
       "name": "national_id",
       "column_patterns": [
-        "(?i).*(id_card|idcard|identity_card|cert_no|certificate_no|shenfen).*",
+        "(?i).*(id_card|idcard|identity_card|cert_no|certificate_no|shenfen|citizen_id).*",
         "(?i).*身份证.*"
       ],
-      "comment_patterns": ["身份证", "(?i)id.?card"],
-      "tags": ["personal_identifier", "sensitive_cn", "gov_id"],
-      "standard_refs": ["GB/T 35273 sensitive personal info", "PIPL"],
+      "comment_patterns": [
+        "身份证",
+        "(?i)id.?card"
+      ],
+      "tags": [
+        "personal_identifier",
+        "sensitive_cn",
+        "gov_id"
+      ],
+      "standard_refs": [
+        "GB/T 35273 sensitive personal info",
+        "PIPL"
+      ],
+      "suppresses": [
+        "identifier_technical"
+      ],
       "priority": 100
+    },
+    {
+      "id": "passport_travel",
+      "name": "passport_travel_permit",
+      "column_patterns": [
+        "(?i).*(passport|travel_doc|travel_permit|hk_macau|hk_macao|tw_permit|permanent_residence|pr_card).*",
+        "(?i).*护照.*",
+        "(?i).*港澳.*",
+        "(?i).*台胞.*",
+        "(?i).*永居.*",
+        "(?i).*通行证.*"
+      ],
+      "comment_keywords": [
+        "护照",
+        "港澳",
+        "台胎",
+        "永居"
+      ],
+      "tags": [
+        "personal_identifier",
+        "sensitive_cn",
+        "gov_id"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "PIPL",
+        "Travel document"
+      ],
+      "suppresses": [
+        "identifier_technical"
+      ],
+      "priority": 99
     },
     {
       "id": "pii_phone",
       "name": "phone",
       "column_patterns": [
-        "(?i).*(phone|mobile|cell|msisdn|tel_no|telephone).*",
+        "(?i).*(phone|mobile|cell|msisdn|tel_no|telephone|fax_no).*",
         "(?i).*手机.*",
         "(?i).*电话.*"
       ],
-      "comment_patterns": ["手机", "电话"],
-      "tags": ["personal_identifier", "contact"],
-      "standard_refs": ["GB/T 35273", "GDPR personal data"],
+      "comment_patterns": [
+        "手机",
+        "电话"
+      ],
+      "tags": [
+        "personal_identifier",
+        "contact"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR personal data"
+      ],
       "priority": 90
     },
     {
       "id": "pii_email",
       "name": "email",
-      "column_patterns": ["(?i).*(email|e_mail|mail).*", "(?i).*邮箱.*"],
-      "comment_patterns": ["邮箱", "邮件"],
-      "tags": ["personal_identifier", "contact"],
-      "standard_refs": ["GDPR personal data"],
+      "column_patterns": [
+        "(?i).*(email|e-mail|e_mail|email_addr|mail_addr|mailbox).*",
+        "(?i).*邮箱.*"
+      ],
+      "comment_patterns": [
+        "邮箱",
+        "邮件"
+      ],
+      "tags": [
+        "personal_identifier",
+        "contact"
+      ],
+      "standard_refs": [
+        "GDPR personal data"
+      ],
       "priority": 85
     },
     {
-      "id": "pii_name",
-      "name": "person_name",
+      "id": "pii_legal_name",
+      "name": "legal_or_display_name",
       "column_patterns": [
-        "(?i).*(full_name|real_name|user_name|cust_name|customer_name|legal_name).*",
-        "(?i)^(name|username)$",
-        "(?i).*姓名.*"
+        "(?i).*(full_name|real_name|cust_name|customer_name|legal_name|given_name|family_name|surname|forename).*",
+        "(?i)^(name)$",
+        "(?i).*姓名.*",
+        "(?i).*曾用名.*"
       ],
-      "comment_patterns": ["姓名"],
-      "tags": ["personal_identifier"],
-      "standard_refs": ["GB/T 35273", "GDPR personal data"],
-      "priority": 80
+      "comment_patterns": [
+        "姓名",
+        "真实姓名"
+      ],
+      "tags": [
+        "personal_identifier"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR personal data"
+      ],
+      "priority": 81
+    },
+    {
+      "id": "pii_login_alias",
+      "name": "login_or_nickname",
+      "column_patterns": [
+        "(?i).*(user_name|username|login_name|login_id|nick_name|nickname|screen_name|account_name).*",
+        "(?i)^(username|login|nickname)$",
+        "(?i).*昵称.*",
+        "(?i).*登录名.*"
+      ],
+      "comment_keywords": [
+        "昵称",
+        "账号名",
+        "用户名"
+      ],
+      "tags": [
+        "login_alias"
+      ],
+      "standard_refs": [
+        "Often not legal name; assess linkage"
+      ],
+      "priority": 68
     },
     {
       "id": "pii_bank",
       "name": "bank_account",
       "column_patterns": [
-        "(?i).*(bank_card|bank_account|account_no|iban|card_no).*",
+        "(?i).*(bank_card|bank_account|account_no|iban|card_no|swift|routing_no).*",
         "(?i).*银行卡.*",
         "(?i).*账号.*"
       ],
-      "comment_patterns": ["银行卡", "账户"],
-      "tags": ["financial", "sensitive_cn"],
-      "standard_refs": ["GB/T 35273 sensitive personal info"],
+      "comment_patterns": [
+        "银行卡",
+        "账户"
+      ],
+      "tags": [
+        "financial",
+        "sensitive_cn"
+      ],
+      "standard_refs": [
+        "GB/T 35273 sensitive personal info"
+      ],
+      "suppresses": [
+        "identifier_technical"
+      ],
       "priority": 95
     },
     {
       "id": "health",
       "name": "health_medical",
       "column_patterns": [
-        "(?i).*(diagnos|disease|medical|health|patient).*",
+        "(?i).*(diagnos|disease|medical|health_record|patient_id|clinic|hospital|prescription|symptom).*",
         "(?i).*病历.*",
         "(?i).*诊断.*"
       ],
-      "comment_patterns": ["病历", "诊断", "健康"],
-      "tags": ["health", "gdpr_special_category"],
-      "standard_refs": ["GB/T 35273", "GDPR Art.9"],
+      "comment_patterns": [
+        "病历",
+        "诊断",
+        "健康"
+      ],
+      "table_patterns": [
+        "(?i).*(patient|medical|clinic|hospital|diag|health|emr|his).*",
+        "(?i).*病历.*",
+        "(?i).*诊疗.*"
+      ],
+      "tags": [
+        "health",
+        "gdpr_special_category"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR Art.9"
+      ],
       "priority": 95
     },
     {
       "id": "biometric",
       "name": "biometric",
       "column_patterns": [
-        "(?i).*(face|fingerprint|iris|voiceprint).*",
+        "(?i).*(face|fingerprint|iris|voiceprint|palmprint|vein_pattern).*",
         "(?i).*指纹.*",
         "(?i).*人脸.*"
       ],
-      "tags": ["biometric", "sensitive_cn", "gdpr_special_category"],
-      "standard_refs": ["GB/T 35273", "GDPR Art.9"],
+      "tags": [
+        "biometric",
+        "sensitive_cn",
+        "gdpr_special_category"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR Art.9"
+      ],
       "priority": 95
+    },
+    {
+      "id": "religion_belief",
+      "name": "religion",
+      "column_patterns": [
+        "(?i).*(religion|religious|faith|church|mosque|temple).*",
+        "(?i).*宗教.*",
+        "(?i).*信仰.*"
+      ],
+      "tags": [
+        "sensitive_cn",
+        "gdpr_special_category"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR Art.9"
+      ],
+      "priority": 94
+    },
+    {
+      "id": "political_opinion",
+      "name": "political",
+      "column_patterns": [
+        "(?i).*(political|politics|party_affil|vote_preference|election_choice).*",
+        "(?i).*政治.*",
+        "(?i).*党派.*"
+      ],
+      "tags": [
+        "sensitive_cn",
+        "gdpr_special_category"
+      ],
+      "standard_refs": [
+        "GDPR Art.9",
+        "GB/T 35273"
+      ],
+      "priority": 94
+    },
+    {
+      "id": "union_membership",
+      "name": "trade_union",
+      "column_patterns": [
+        "(?i).*(union_member|trade_union|labour_union|labor_union).*",
+        "(?i).*工会.*"
+      ],
+      "tags": [
+        "sensitive_cn",
+        "gdpr_special_category"
+      ],
+      "standard_refs": [
+        "GDPR Art.9"
+      ],
+      "priority": 94
+    },
+    {
+      "id": "sexual_orientation",
+      "name": "sexual_orientation",
+      "column_patterns": [
+        "(?i).*(sexual_orientation|lgbt|orientation_gender).*",
+        "(?i).*性取向.*"
+      ],
+      "tags": [
+        "sensitive_cn",
+        "gdpr_special_category"
+      ],
+      "standard_refs": [
+        "GDPR Art.9"
+      ],
+      "priority": 94
+    },
+    {
+      "id": "genetic_data",
+      "name": "genetic",
+      "column_patterns": [
+        "(?i).*(genetic|genome|dna_seq|gene_marker|heredit).*",
+        "(?i).*基因.*",
+        "(?i).*遗传.*"
+      ],
+      "tags": [
+        "sensitive_cn",
+        "gdpr_special_category"
+      ],
+      "standard_refs": [
+        "GDPR Art.9",
+        "GB/T 35273"
+      ],
+      "priority": 94
+    },
+    {
+      "id": "criminal_justice",
+      "name": "criminal_justice",
+      "column_patterns": [
+        "(?i).*(criminal_record|conviction|felony|misdemeanor|court_case|judgment_no).*",
+        "(?i).*前科.*",
+        "(?i).*犯罪.*",
+        "(?i).*判决.*"
+      ],
+      "tags": [
+        "criminal_justice",
+        "sensitive_cn"
+      ],
+      "standard_refs": [
+        "High sensitivity; legal basis required"
+      ],
+      "priority": 94
     },
     {
       "id": "location",
       "name": "location_track",
       "column_patterns": [
-        "(?i).*(gps|latitude|longitude|lng|lat|geo|location).*",
+        "(?i).*(gps|latitude|longitude|lng|lat|geo|location|trajectory).*",
         "(?i).*轨迹.*",
         "(?i).*经纬.*"
       ],
-      "comment_patterns": ["定位", "轨迹"],
-      "tags": ["location_trace", "sensitive_cn"],
-      "standard_refs": ["GB/T 35273 sensitive personal info"],
+      "comment_patterns": [
+        "定位",
+        "轨迹"
+      ],
+      "tags": [
+        "location_trace",
+        "sensitive_cn"
+      ],
+      "standard_refs": [
+        "GB/T 35273 sensitive personal info"
+      ],
       "priority": 90
+    },
+    {
+      "id": "vehicle_plate",
+      "name": "vehicle",
+      "column_patterns": [
+        "(?i).*(license_plate|plate_no|vehicle_no|vin|frame_no|car_plate).*",
+        "(?i).*车牌.*",
+        "(?i).*车架号.*"
+      ],
+      "tags": [
+        "vehicle_plate",
+        "personal_identifier"
+      ],
+      "standard_refs": [
+        "Often relatable to person"
+      ],
+      "priority": 79
+    },
+    {
+      "id": "tax_social",
+      "name": "tax_social_insurance",
+      "column_patterns": [
+        "(?i).*(tax_id|tin|ssn|social_sec|social_security|pension_no|provident|housing_fund).*",
+        "(?i).*税号.*",
+        "(?i).*社保.*",
+        "(?i).*公积金.*"
+      ],
+      "tags": [
+        "tax_personal",
+        "sensitive_cn",
+        "personal_identifier"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "PIPL"
+      ],
+      "suppresses": [
+        "identifier_technical"
+      ],
+      "priority": 91
+    },
+    {
+      "id": "ad_tracking_id",
+      "name": "advertising_device_id",
+      "column_patterns": [
+        "(?i).*(idfa|gaid|oaid|aaid|android_id|idfv|advertising_id|ad_id|muid).*",
+        "(?i).*广告标识.*"
+      ],
+      "tags": [
+        "ad_identifier",
+        "device_network",
+        "personal_identifier"
+      ],
+      "standard_refs": [
+        "GDPR ePrivacy / personal data context"
+      ],
+      "priority": 75
     },
     {
       "id": "child",
       "name": "minor",
-      "column_patterns": ["(?i).*(child|minor|under_14).*", "(?i).*未成年.*"],
-      "comment_patterns": ["未成年"],
-      "tags": ["child_data", "sensitive_cn"],
-      "standard_refs": ["GB/T 35273"],
+      "column_patterns": [
+        "(?i).*(child|minor|under_14|juvenile).*",
+        "(?i).*未成年.*"
+      ],
+      "comment_patterns": [
+        "未成年"
+      ],
+      "tags": [
+        "child_data",
+        "sensitive_cn"
+      ],
+      "standard_refs": [
+        "GB/T 35273"
+      ],
       "priority": 92
     },
     {
       "id": "password_secret",
       "name": "credential",
       "column_patterns": [
-        "(?i).*(password|passwd|pwd|secret|api_key|token|private_key).*",
+        "(?i).*(password|passwd|pwd|secret|api_key|token|private_key|bearer|refresh_token).*",
         "(?i).*密码.*",
         "(?i).*密钥.*"
       ],
-      "tags": ["credential", "security"],
-      "standard_refs": ["internal security baseline"],
+      "tags": [
+        "credential",
+        "security"
+      ],
+      "standard_refs": [
+        "internal security baseline"
+      ],
       "priority": 88
+    },
+    {
+      "id": "cookie_session",
+      "name": "cookie_session",
+      "column_patterns": [
+        "(?i).*(cookie|session_key|session_token|csrf|xsrf|jwt_secret).*",
+        "(?i).*Cookie.*"
+      ],
+      "tags": [
+        "credential",
+        "security"
+      ],
+      "standard_refs": [
+        "Session / tracking context"
+      ],
+      "priority": 74
     },
     {
       "id": "internal_only",
       "name": "internal_business",
       "column_patterns": [
-        "(?i).*(internal|confidential).*",
+        "(?i).*(internal|confidential|classified).*",
         "(?i).*薪资.*",
         "(?i).*薪酬.*",
         "(?i).*绩效.*"
       ],
-      "comment_patterns": ["内部", "机密"],
-      "tags": ["internal_business"],
-      "standard_refs": ["organizational policy TBD"],
+      "comment_patterns": [
+        "内部",
+        "机密"
+      ],
+      "tags": [
+        "internal_business"
+      ],
+      "standard_refs": [
+        "organizational policy TBD"
+      ],
       "priority": 70
+    },
+    {
+      "id": "address_postal",
+      "name": "address_postal",
+      "column_patterns": [
+        "(?i).*(address|postal|zipcode|zip_code|postcode|mailing|street|road|district|province|city_code).*",
+        "(?i)^mail_addr$",
+        "(?i).*地址.*",
+        "(?i).*邮编.*"
+      ],
+      "comment_keywords": [
+        "地址",
+        "邮编",
+        "address"
+      ],
+      "tags": [
+        "personal_identifier",
+        "contact"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR personal data"
+      ],
+      "priority": 78
+    },
+    {
+      "id": "birth_gender",
+      "name": "birth_gender",
+      "column_patterns": [
+        "(?i).*(birth|born|dob|date_of_birth|age|gender|sex).*",
+        "(?i).*出生.*",
+        "(?i).*生日.*",
+        "(?i).*年龄.*",
+        "(?i).*性别.*"
+      ],
+      "comment_keywords": [
+        "出生",
+        "生日",
+        "性别"
+      ],
+      "tags": [
+        "personal_identifier"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR personal data"
+      ],
+      "priority": 77
+    },
+    {
+      "id": "internal_user_key",
+      "name": "internal_user_key",
+      "column_patterns": [
+        "(?i)^user_id$",
+        "(?i)^usr_id$",
+        "(?i)^system_user_id$",
+        "(?i)^sys_user_id$"
+      ],
+      "comment_keywords": [
+        "用户ID",
+        "内部用户",
+        "系统用户",
+        "内部账号"
+      ],
+      "tags": [
+        "internal_surrogate_id"
+      ],
+      "standard_refs": [
+        "Internal surrogate key"
+      ],
+      "suppresses": [
+        "identifier_technical"
+      ],
+      "priority": 63
+    },
+    {
+      "id": "party_customer_id",
+      "name": "party_customer_id",
+      "column_patterns": [
+        "(?i)^(cust|customer|client|consumer|buyer|subscriber)_?(id|no|code)$",
+        "(?i)^(member|mbr|vip)_?(id|no)$"
+      ],
+      "tags": [
+        "personal_identifier",
+        "contact"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR personal data"
+      ],
+      "suppresses": [
+        "identifier_technical"
+      ],
+      "priority": 62
+    },
+    {
+      "id": "technical_id",
+      "name": "technical_id",
+      "column_patterns": [
+        "(?i)^(?:id|pk|uuid|guid)$",
+        "(?i)^(?!user_id$)(?!usr_id$).+_id$",
+        "(?i).+_no$",
+        "(?i).+_code$",
+        "(?i)^(order|ord|txn|transaction|payment|invoice|sku|item|line|batch|seq|serial)_?(id|no|code)$"
+      ],
+      "column_keywords": [
+        "uuid",
+        "guid"
+      ],
+      "tags": [
+        "identifier_technical"
+      ],
+      "standard_refs": [
+        "Technical key; context-dependent"
+      ],
+      "priority": 55
+    },
+    {
+      "id": "network_device",
+      "name": "network_device",
+      "column_patterns": [
+        "(?i).*(ip_addr|ip_address|client_ip|remote_ip|mac_addr|imei|device_id|terminal_id).*",
+        "(?i).*手机串码.*"
+      ],
+      "column_keywords": [
+        "imei",
+        "mac"
+      ],
+      "tags": [
+        "device_network",
+        "personal_identifier"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR personal data"
+      ],
+      "priority": 76
+    },
+    {
+      "id": "education_job",
+      "name": "education_job",
+      "column_patterns": [
+        "(?i).*(education|degree|school|university|employer|occupation|title|position|resume).*",
+        "(?i).*学历.*",
+        "(?i).*就读.*",
+        "(?i).*职位.*",
+        "(?i).*公司.*"
+      ],
+      "tags": [
+        "personal_identifier"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR personal data"
+      ],
+      "priority": 72
+    },
+    {
+      "id": "photo_avatar",
+      "name": "photo_avatar",
+      "column_patterns": [
+        "(?i).*(photo|picture|pic|avatar|headimg|portrait|selfie).*",
+        "(?i).*头像.*",
+        "(?i).*照片.*"
+      ],
+      "tags": [
+        "biometric",
+        "sensitive_cn",
+        "gdpr_special_category"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR Art.9 if biometric"
+      ],
+      "priority": 93
+    },
+    {
+      "id": "social_account",
+      "name": "social_account",
+      "column_patterns": [
+        "(?i).*(wechat|weixin|openid|unionid|qq|alipay|weibo|dingtalk).*",
+        "(?i).*微信.*",
+        "(?i).*支付宝.*"
+      ],
+      "tags": [
+        "personal_identifier",
+        "contact"
+      ],
+      "standard_refs": [
+        "GB/T 35273",
+        "GDPR personal data"
+      ],
+      "priority": 82
     }
   ]
 }
