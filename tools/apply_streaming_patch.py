@@ -1,70 +1,35 @@
-from __future__ import annotations
-
-import asyncio
-import json
-from collections.abc import Awaitable, Callable
 from pathlib import Path
 
-from dotenv import load_dotenv
+ROOT = Path(__file__).resolve().parent.parent
+p = ROOT / "app" / "main.py"
+t = p.read_text(encoding="utf-8")
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
-
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-
-from app.ai_enhance import enhance_classified_fields
-from app.classifier import classify_fields, load_tag_levels
-from app.frameworks import (
-    applied_frameworks_label,
-    list_standards_for_api,
-    parse_frameworks_param,
-    validate_framework_selection,
-)
-from app.ingest import sniff_and_parse
-from app.settings import ai_enhancement_configured, public_ai_status, get_ai_settings
-from app.models import ClassifyResponse
-
-FRAMEWORK_PATH = BASE_DIR / "app" / "rules" / "compliance_framework.json"
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-
-app = FastAPI(title="Data classifier", version="0.1.0")
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-
-
-@app.get("/", response_class=HTMLResponse)
-async def index(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse(
-        request,
-        "index.html",
-        {"title": "\u6570\u636e\u5206\u7c7b\u5206\u7ea7\uff08\u56fd\u6807/GDPR\u5bf9\u9f50\u6f14\u793a\uff09"},
+if "import asyncio" not in t:
+    t = t.replace("import json\n", "import asyncio\nimport json\n", 1)
+if "Awaitable" not in t:
+    t = t.replace(
+        "from pathlib import Path\n",
+        "from collections.abc import Awaitable, Callable\nfrom pathlib import Path\n",
+        1,
+    )
+if "StreamingResponse" not in t:
+    t = t.replace(
+        "from fastapi.responses import HTMLResponse, JSONResponse\n",
+        "from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse\n",
+        1,
     )
 
+start = t.index('@app.post("/api/classify")')
+end = t.index('@app.get("/api/ai-status")')
 
-@app.get("/api/compliance-framework")
-async def compliance_framework() -> JSONResponse:
-    if not FRAMEWORK_PATH.is_file():
-        raise HTTPException(status_code=404, detail="compliance_framework.json missing")
-    with FRAMEWORK_PATH.open(encoding="utf-8") as f:
-        data = json.load(f)
-    return JSONResponse(data)
-
-
-@app.get("/api/standards")
-async def api_standards() -> JSONResponse:
-    return JSONResponse(list_standards_for_api())
-
-
-async def _build_classify_response(
+build_fn = '''async def _build_classify_response(
     fields: list,
     fw_sel,
     want_ai: bool,
     progress: Callable[[int, str], Awaitable[None]] | None,
 ) -> ClassifyResponse:
     if progress:
-        await progress(8, "\u89c4\u5219\u5f15\u64ce\u5206\u7c7b\u4e2d\u2026")
+        await progress(8, "\\u89c4\\u5219\\u5f15\\u64ce\\u5206\\u7c7b\\u4e2d\\u2026")
     classified, summary = classify_fields(fields, frameworks=fw_sel)
     ai_applied = False
     ai_model = None
@@ -73,10 +38,10 @@ async def _build_classify_response(
         if not ai_enhancement_configured():
             raise HTTPException(
                 status_code=503,
-                detail="AI \u589e\u5f3a\u672a\u914d\u7f6e\uff1a\u8bf7\u7ba1\u7406\u5458\u8bbe\u7f6e\u73af\u5883\u53d8\u91cf DATA_CLASSIFIER_AI_API_KEY",
+                detail="AI \\u589e\\u5f3a\\u672a\\u914d\\u7f6e\\uff1a\\u8bf7\\u7ba1\\u7406\\u5458\\u8bbe\\u7f6e\\u73af\\u5883\\u53d8\\u91cf DATA_CLASSIFIER_AI_API_KEY",
             )
         if progress:
-            await progress(12, "\u51c6\u5907\u8c03\u7528 AI \u6a21\u578b\u2026")
+            await progress(12, "\\u51c6\\u5907\\u8c03\\u7528 AI \\u6a21\\u578b\\u2026")
         tag_levels = load_tag_levels()
 
         async def ai_sub(sub_pct: int, msg: str) -> None:
@@ -96,7 +61,7 @@ async def _build_classify_response(
         ai_model = s_ai.model
         ai_provider = s_ai.provider
     if progress:
-        await progress(99, "\u751f\u6210\u54cd\u5e94\u2026")
+        await progress(99, "\\u751f\\u6210\\u54cd\\u5e94\\u2026")
     return ClassifyResponse(
         fields=classified,
         summary=summary,
@@ -107,7 +72,9 @@ async def _build_classify_response(
     )
 
 
-@app.post("/api/classify", response_model=None)
+'''
+
+new_classify = '''@app.post("/api/classify")
 async def api_classify(
     file: UploadFile = File(...),
     frameworks: str | None = Form(default=None),
@@ -116,7 +83,7 @@ async def api_classify(
 ) -> JSONResponse | StreamingResponse:
     raw = await file.read()
     if not raw:
-        raise HTTPException(status_code=400, detail="\u7a7a\u6587\u4ef6")
+        raise HTTPException(status_code=400, detail="\\u7a7a\\u6587\\u4ef6")
 
     try:
         fields = sniff_and_parse(file.filename or "upload", raw)
@@ -135,7 +102,7 @@ async def api_classify(
     if use_stream:
 
         async def sse_line(obj: dict) -> bytes:
-            return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n".encode("utf-8")
+            return f"data: {json.dumps(obj, ensure_ascii=False)}\\n\\n".encode("utf-8")
 
         async def event_gen():
             queue: asyncio.Queue[tuple[int, str] | None] = asyncio.Queue()
@@ -151,7 +118,7 @@ async def api_classify(
 
             try:
                 yield await sse_line(
-                    {"type": "progress", "pct": 2, "message": "\u5df2\u63a5\u6536\u6587\u4ef6\u2026"}
+                    {"type": "progress", "pct": 2, "message": "\\u5df2\\u63a5\\u6536\\u6587\\u4ef6\\u2026"}
                 )
                 task = asyncio.create_task(worker())
                 while True:
@@ -185,44 +152,8 @@ async def api_classify(
     return JSONResponse(content=body.model_dump(mode="json", by_alias=True))
 
 
-@app.get("/api/ai-status")
-async def ai_status() -> JSONResponse:
-    return JSONResponse(public_ai_status())
+'''
 
-@app.get("/api/sample-json")
-async def sample_json() -> JSONResponse:
-    sample = {
-        "fields": [
-            {
-                "database": "crm",
-                "schema": "public",
-                "table": "customers",
-                "column": "mobile_phone",
-                "data_type": "varchar(20)",
-                "comment": "\u624b\u673a\u53f7",
-            },
-            {
-                "database": "crm",
-                "table": "customers",
-                "column": "user_name",
-                "comment": "\u5ba2\u6237\u59d3\u540d",
-            },
-            {
-                "database": "crm",
-                "table": "customers",
-                "column": "created_at",
-                "comment": "\u521b\u5efa\u65f6\u95f4",
-            },
-        ]
-    }
-    return JSONResponse(sample)
-
-
-def _run_dev() -> None:
-    import uvicorn
-
-    uvicorn.run("app.main:app", host="127.0.0.1", port=8767, reload=True)
-
-
-if __name__ == "__main__":
-    _run_dev()
+t = t[:start] + build_fn + new_classify + t[end:]
+p.write_text(t, encoding="utf-8", newline="\n")
+print("patched main.py")

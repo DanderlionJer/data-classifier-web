@@ -1,0 +1,57 @@
+@app.post("/api/classify")
+async def api_classify(
+    file: UploadFile = File(...),
+    frameworks: str | None = Form(default=None),
+    ai_enhance: str | None = Form(default=None),
+) -> JSONResponse:
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="\u7a7a\u6587\u4ef6")
+
+    try:
+        fields = sniff_and_parse(file.filename or "upload", raw)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    fw_sel = parse_frameworks_param(frameworks)
+    try:
+        validate_framework_selection(fw_sel)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e)) from e
+
+    classified, summary = classify_fields(fields, frameworks=fw_sel)
+    ai_applied = False
+    ai_model = None
+    ai_provider = None
+    want_ai = (ai_enhance or "").strip().lower() in ("1", "true", "yes", "on")
+    if want_ai:
+        if not ai_enhancement_configured():
+            raise HTTPException(
+                status_code=503,
+                detail="AI \u589e\u5f3a\u672a\u914d\u7f6e\uff1a\u8bf7\u7ba1\u7406\u5458\u8bbe\u7f6e\u73af\u5883\u53d8\u91cf DATA_CLASSIFIER_AI_API_KEY",
+            )
+        tag_levels = load_tag_levels()
+        classified = await enhance_classified_fields(classified, tag_levels)
+        summary = {}
+        for c in classified:
+            k = str(c.level)
+            summary[k] = summary.get(k, 0) + 1
+        ai_applied = True
+        s_ai = get_ai_settings()
+        ai_model = s_ai.model
+        ai_provider = s_ai.provider
+
+    body = ClassifyResponse(
+        fields=classified,
+        summary=summary,
+        applied_frameworks=applied_frameworks_label(fw_sel),
+        ai_enhancement_applied=ai_applied,
+        ai_model=ai_model,
+        ai_provider=ai_provider,
+    )
+    return JSONResponse(content=body.model_dump(mode="json", by_alias=True))
+
+
+
+
+

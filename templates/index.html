@@ -9,7 +9,7 @@
 <body>
   <header class="header">
     <h1>数据分类分级</h1>
-    <p class="sub">上传 JSON 或 Excel（.xlsx），按可配置规则输出 1–5 级。级别与标签对齐 <strong>GB/T 35273-2020、PIPL、《数据安全法》、GDPR</strong> 等常见框架（见<a href="/api/compliance-framework" target="_blank" rel="noopener">合规说明 JSON</a>）；正式使用前请法务审定 <code>app/rules/</code>。</p>
+    <p class="sub">上传 JSON 或 Excel（.xlsx），按规则输出 1–5 级与标签。对齐 <strong>GB/T 35273-2020、PIPL/数据安全法、GDPR</strong> 等常见框架；<a href="/api/compliance-framework" target="_blank" rel="noopener">合规说明 JSON</a>。规则与格式见 <code>app/rules/</code>。</p>
   </header>
 
   <main class="layout">
@@ -20,10 +20,28 @@
           <input type="file" id="file" name="file" accept=".json,.xlsx,.xls" required />
           <span>选择文件</span>
         </label>
-        <button type="submit" class="btn primary">开始分类</button>
+        <p id="file-feedback" class="file-feedback" hidden></p>
+        <fieldset class="standards-fieldset" id="standards-fieldset">
+          <legend>适用标准（可多选；不选则使用全部规则）</legend>
+          <p class="hint" id="standards-loading">加载标准列表…</p>
+        </fieldset>
+        <div class="ai-enhance-wrap" id="ai-enhance-wrap" hidden>
+          <label class="chk">
+            <input type="checkbox" id="ai-enhance" name="ai_enhance_cb" />
+            AI 增强（基于规则结果，由部署配置的外部模型复核；仅元数据会发往模型服务商）
+          </label>
+          <p class="hint" id="ai-enhance-hint"></p>
+        </div>
+        <div id="progress-wrap" class="progress-wrap" hidden>
+          <div class="progress-bar-outer" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="progress-bar-inner" class="progress-bar-inner"></div>
+          </div>
+          <p id="progress-label" class="progress-label"></p>
+        </div>
+        <button type="submit" class="btn primary" id="submit-btn">开始分类</button>
         <a class="btn link" href="/api/sample-json" target="_blank" rel="noopener">示例 JSON</a>
       </form>
-      <p class="hint">Excel 推荐列：<strong>database, schema, table, column, data_type, comment</strong>（也支持常见中文表头）。</p>
+      <p class="hint">Excel 推荐列：<strong>database, schema, table, column, data_type, comment</strong>；也支持常见中文表头别名。</p>
       <p id="status" class="status" aria-live="polite"></p>
     </section>
 
@@ -46,6 +64,7 @@
               <th>类型</th>
               <th>注释</th>
               <th>标签</th>
+              <th>AI</th>
               <th>说明</th>
             </tr>
           </thead>
@@ -56,54 +75,296 @@
   </main>
 
   <script>
-    const form = document.getElementById('upload-form');
-    const statusEl = document.getElementById('status');
-    const summaryCard = document.getElementById('summary-card');
-    const summaryEl = document.getElementById('summary');
-    const resultCard = document.getElementById('result-card');
-    const gridBody = document.querySelector('#grid tbody');
+    const form = document.getElementById("upload-form");
+    const statusEl = document.getElementById("status");
+    const summaryCard = document.getElementById("summary-card");
+    const summaryEl = document.getElementById("summary");
+    const resultCard = document.getElementById("result-card");
+    const gridBody = document.querySelector("#grid tbody");
+    const standardsFieldset = document.getElementById("standards-fieldset");
+    const standardsLoading = document.getElementById("standards-loading");
+    const aiEnhanceWrap = document.getElementById("ai-enhance-wrap");
+    const aiEnhanceHint = document.getElementById("ai-enhance-hint");
+    const aiEnhanceCb = document.getElementById("ai-enhance");
+
+    /** Base URL for same-origin API calls (always ends with /). */
+    function apiRootUrl() {
+      const u = new URL(window.location.href);
+      let path = u.pathname || "/";
+      if (!path.endsWith("/")) {
+        const lastSeg = path.slice(path.lastIndexOf("/") + 1);
+        if (lastSeg.includes(".")) {
+          path = path.slice(0, path.lastIndexOf("/") + 1);
+          if (!path) path = "/";
+        }
+      }
+      if (!path.endsWith("/")) {
+        path += "/";
+      }
+      return u.origin + path;
+    }
+
+    function sameOriginFetchOpts() {
+      const o = { credentials: "same-origin" };
+      if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+        o.signal = AbortSignal.timeout(20000);
+      }
+      return o;
+    }
+
+    async function loadStandards() {
+      if (window.location.protocol === "file:") {
+        standardsLoading.textContent =
+          "当前为本地文件打开方式，无法请求接口。请运行应用后使用浏览器访问服务地址（例如 http://127.0.0.1:8767），不要直接双击打开本 HTML。";
+        return;
+      }
+      try {
+        const url = new URL("api/standards", apiRootUrl());
+        const res = await fetch(url.href, sameOriginFetchOpts());
+        if (!res.ok) {
+          standardsLoading.textContent =
+            "无法加载标准列表（HTTP " + res.status + "）。请确认已通过本应用的服务地址打开页面。";
+          return;
+        }
+        const list = await res.json();
+        if (!Array.isArray(list)) {
+          standardsLoading.textContent = "标准列表格式异常，已跳过筛选选项。";
+          return;
+        }
+        standardsLoading.remove();
+        for (const s of list) {
+          const lab = document.createElement("label");
+          lab.className = "chk";
+          const tip = (s.title_zh || "").trim() || (s.title_en || "").trim();
+          if (tip) lab.title = tip;
+          const inp = document.createElement("input");
+          inp.type = "checkbox";
+          inp.name = "fw";
+          inp.value = s.id;
+          lab.appendChild(inp);
+          lab.appendChild(document.createTextNode(" " + (s.code || s.id)));
+          standardsFieldset.appendChild(lab);
+        }
+      } catch (e) {
+        if (e && (e.name === "AbortError" || e.name === "TimeoutError")) {
+          standardsLoading.textContent =
+            "加载标准列表超时。请确认页面地址与后端一致（含路径前缀），且 GET /api/standards 可访问。";
+        } else {
+          standardsLoading.textContent =
+            "无法加载标准列表（网络或解析失败）。将仅支持「不筛选」模式。请确认已用服务地址打开页面且接口可访问。";
+        }
+        console.error(e);
+      }
+    }
+    async function loadAiStatus() {
+      if (window.location.protocol === "file:") return;
+      try {
+        const url = new URL("api/ai-status", apiRootUrl());
+        const res = await fetch(url.href, sameOriginFetchOpts());
+        if (!res.ok) return;
+        const st = await res.json();
+        if (st.available) {
+          aiEnhanceWrap.hidden = false;
+          const host = st.base_url_host ? " · " + st.base_url_host : "";
+          const prov = st.provider ? st.provider + " / " : "";
+          aiEnhanceHint.textContent = "已启用：" + prov + "模型 " + (st.model || "") + host;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadStandards();
+    loadAiStatus();
+
 
     function levelClass(lv) {
       const n = Number(lv);
-      if (n >= 5) return 'lv5';
-      if (n === 4) return 'lv4';
-      if (n === 3) return 'lv3';
-      if (n === 2) return 'lv2';
-      return 'lv1';
+      if (n >= 5) return "lv5";
+      if (n === 4) return "lv4";
+      if (n === 3) return "lv3";
+      if (n === 2) return "lv2";
+      return "lv1";
     }
 
-    form.addEventListener('submit', async (e) => {
+    function selectedFrameworks() {
+      return Array.from(form.querySelectorAll('input[name="fw"]:checked')).map((el) => el.value);
+    }
+
+    function formatBytes(n) {
+      const x = Number(n);
+      if (!Number.isFinite(x) || x < 0) return "";
+      if (x < 1024) return x + " B";
+      if (x < 1048576) return (x / 1024).toFixed(1) + " KB";
+      return (x / 1048576).toFixed(1) + " MB";
+    }
+
+    const fileInputEl = document.getElementById("file");
+    const fileFeedbackEl = document.getElementById("file-feedback");
+    fileInputEl.addEventListener("change", () => {
+      const f = fileInputEl.files[0];
+      if (!f) {
+        fileFeedbackEl.hidden = true;
+        fileFeedbackEl.textContent = "";
+        return;
+      }
+      fileFeedbackEl.hidden = false;
+      fileFeedbackEl.textContent =
+        "\u5df2\u9009\u62e9\uff1a" + f.name + " \uff08" + formatBytes(f.size) + "\uff09";
+    });
+
+    async function readSseClassifyResponse(res, setProgress) {
+      const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += value;
+        let sep;
+        while ((sep = buffer.indexOf("\n\n")) !== -1) {
+          const chunk = buffer.slice(0, sep);
+          buffer = buffer.slice(sep + 2);
+          for (const line of chunk.split("\n")) {
+            if (line.startsWith("data: ")) {
+              const payload = JSON.parse(line.slice(6));
+              if (payload.type === "progress") {
+                setProgress(payload.pct, payload.message || "");
+              } else if (payload.type === "error") {
+                const err = new Error(payload.detail || "\u8bf7\u6c42\u5931\u8d25");
+                err.status = payload.status;
+                throw err;
+              } else if (payload.type === "result") {
+                return payload.data;
+              }
+            }
+          }
+        }
+      }
+      throw new Error("\u672a\u6536\u5230\u5b8c\u6574\u7ed3\u679c");
+    }
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const input = document.getElementById('file');
+      const input = document.getElementById("file");
       const f = input.files[0];
       if (!f) return;
-      statusEl.textContent = '处理中…';
+
+      const progressWrap = document.getElementById("progress-wrap");
+      const progressBar = document.getElementById("progress-bar-inner");
+      const progressLabel = document.getElementById("progress-label");
+      const submitBtn = document.getElementById("submit-btn");
+
+      function setProgress(pct, msg) {
+        progressWrap.hidden = false;
+        const p = Math.max(0, Math.min(100, Number(pct) || 0));
+        progressBar.style.width = p + "%";
+        progressBar.parentElement.setAttribute("aria-valuenow", String(Math.round(p)));
+        progressLabel.textContent = (msg || "") + " \u00b7 " + Math.round(p) + "%";
+      }
+
+      function hideProgress() {
+        progressWrap.hidden = true;
+        progressBar.style.width = "0%";
+        progressLabel.textContent = "";
+      }
+
+      statusEl.textContent = "";
       summaryCard.hidden = true;
       resultCard.hidden = true;
-      gridBody.innerHTML = '';
+      gridBody.innerHTML = "";
 
       const fd = new FormData();
-      fd.append('file', f);
+      fd.append("file", f);
+      const fws = selectedFrameworks();
+      if (fws.length) {
+        fd.append("frameworks", JSON.stringify(fws));
+      }
+      if (aiEnhanceCb && aiEnhanceCb.checked) {
+        fd.append("ai_enhance", "true");
+      }
+      fd.append("stream_progress", "true");
+
+      submitBtn.disabled = true;
+      hideProgress();
       try {
-        const res = await fetch('/api/classify', { method: 'POST', body: fd });
-        const data = await res.json();
+        const clsUrl = new URL("api/classify", apiRootUrl());
+        const res = await fetch(clsUrl.href, {
+          method: "POST",
+          body: fd,
+          credentials: "same-origin",
+        });
+
+        let data;
+        const ct = (res.headers.get("content-type") || "").toLowerCase();
         if (!res.ok) {
-          statusEl.textContent = data.detail || '请求失败';
+          hideProgress();
+          try {
+            data = await res.json();
+          } catch (_) {
+            data = {};
+          }
+          const det = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail || "");
+          statusEl.textContent = det || ("\u8bf7\u6c42\u5931\u8d25 HTTP " + res.status);
           return;
         }
-        statusEl.textContent = `完成：共 ${data.fields.length} 个字段`;
+
+        if (ct.includes("text/event-stream")) {
+          data = await readSseClassifyResponse(res, setProgress);
+          setProgress(100, "\u5b8c\u6210");
+        } else {
+          data = await res.json();
+        }
+        hideProgress();
+
+        const af = (data.applied_frameworks || []).join(", ");
+        const afNote = af ? "\uff08\u6807\u51c6\uff1a" + af + "\uff09" : "";
+        let stMsg = "\u5b8c\u6210\uff1a\u5171 " + data.fields.length + " \u4e2a\u5b57\u6bb5" + afNote;
+        if (data.ai_enhancement_applied) {
+          stMsg += " \u00b7 AI \u5df2\u589e\u5f3a";
+          if (data.ai_model) stMsg += "\uff08" + data.ai_model + "\uff09";
+        }
+        statusEl.textContent = stMsg;
 
         const sums = data.summary || {};
-        summaryEl.innerHTML = Object.keys(sums).sort((a,b)=>Number(b)-Number(a)).map(k => {
-          return `<span class="chip ${levelClass(k)}">级别 ${k}：${sums[k]}</span>`;
-        }).join('');
+        summaryEl.innerHTML = Object.keys(sums)
+          .sort((a, b) => Number(b) - Number(a))
+          .map((k) => {
+            return (
+              '<span class="chip ' +
+              levelClass(k) +
+              '">\u7b49\u7ea7 ' +
+              k +
+              "\uff1a" +
+              sums[k] +
+              "</span>"
+            );
+          })
+          .join("");
         summaryCard.hidden = false;
 
         for (const row of data.fields) {
           const fld = row.field;
-          const tr = document.createElement('tr');
-          const tags = (row.tags || []).join(', ');
-          const rationale = row.rationale || '';
+          const tr = document.createElement("tr");
+          const tags = (row.tags || []).join(", ");
+          const rationale = row.rationale || "";
+          let aiCell = "\u2014";
+          if (row.ai) {
+            if (row.ai.review_suggested) {
+              aiCell =
+                '<span class="badge-warn" title="\u5efa\u8bae\u4eba\u5de5\u590d\u6838">\u590d\u6838</span>';
+            } else {
+              aiCell =
+                '<span class="badge-ai" title="\u5df2\u7528\u5916\u90e8\u6a21\u578b\u8c03\u6574">\u589e\u5f3a</span>';
+            }
+            if (row.ai.baseline_level != null && row.ai.baseline_level !== row.level) {
+              aiCell +=
+                ' <small style="opacity:.85">\u539f' +
+                row.ai.baseline_level +
+                "\u2192" +
+                row.level +
+                "</small>";
+            }
+          }
           tr.innerHTML = `
             <td><span class="badge ${levelClass(row.level)}">${row.level}</span></td>
             <td>${escapeHtml(fld.database)}</td>
@@ -113,19 +374,24 @@
             <td>${escapeHtml(fld.data_type)}</td>
             <td>${escapeHtml(fld.comment)}</td>
             <td>${escapeHtml(tags)}</td>
+            <td>${aiCell}</td>
             <td class="rationale">${escapeHtml(rationale)}</td>`;
           gridBody.appendChild(tr);
         }
         resultCard.hidden = false;
       } catch (err) {
-        statusEl.textContent = '网络或解析错误';
+        hideProgress();
+        statusEl.textContent = err.message || "\u7f51\u7edc\u6216\u89e3\u6790\u9519\u8bef";
         console.error(err);
+      } finally {
+        submitBtn.disabled = false;
       }
     });
+);
 
     function escapeHtml(s) {
-      return String(s ?? '').replace(/[&<>"']/g, c => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      return String(s ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
       }[c]));
     }
   </script>

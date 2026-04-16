@@ -66,8 +66,13 @@
         "(?i).*电话.*"
       ],
       "comment_patterns": [
-        "手机",
-        "电话"
+        "手机号码",
+        "手机号",
+        "移动电话",
+        "联系电话",
+        "电话号码",
+        "座机",
+        "传真"
       ],
       "tags": [
         "personal_identifier",
@@ -87,8 +92,10 @@
         "(?i).*邮箱.*"
       ],
       "comment_patterns": [
-        "邮箱",
-        "邮件"
+        "邮箱地址",
+        "电子邮件",
+        "电子邮箱",
+        "邮件地址"
       ],
       "tags": [
         "personal_identifier",
@@ -104,7 +111,6 @@
       "name": "legal_or_display_name",
       "column_patterns": [
         "(?i).*(full_name|real_name|cust_name|customer_name|legal_name|given_name|family_name|surname|forename).*",
-        "(?i)^(name)$",
         "(?i).*姓名.*",
         "(?i).*曾用名.*"
       ],
@@ -149,11 +155,18 @@
       "column_patterns": [
         "(?i).*(bank_card|bank_account|account_no|iban|card_no|swift|routing_no).*",
         "(?i).*银行卡.*",
-        "(?i).*账号.*"
+        "(?i).*(?:^|_)(?:bank_)?account_no(?:_|$).*",
+        "(?i).*(?:^|_)(?:pay_)?account_id(?:_|$).*"
       ],
       "comment_patterns": [
         "银行卡",
-        "账户"
+        "银行账户",
+        "银行账号",
+        "支付账号",
+        "收款账户",
+        "对公账户",
+        "借记卡",
+        "信用卡"
       ],
       "tags": [
         "financial",
@@ -178,10 +191,18 @@
       "comment_patterns": [
         "病历",
         "诊断",
-        "健康"
+        "医疗",
+        "住院",
+        "处方",
+        "症状",
+        "患病",
+        "诊疗",
+        "传染病",
+        "血型",
+        "病史"
       ],
       "table_patterns": [
-        "(?i).*(patient|medical|clinic|hospital|diag|health|emr|his).*",
+        "(?i).*(?:patient|medical_record|medical_history|clinic|hospital|emr_|_emr|diagnos|prescription).*",
         "(?i).*病历.*",
         "(?i).*诊疗.*"
       ],
@@ -322,12 +343,18 @@
       "id": "location",
       "name": "location_track",
       "column_patterns": [
-        "(?i).*(gps|latitude|longitude|lng|lat|geo|location|trajectory).*",
+        "(?i).*(?:gps|g\\s*p\\s*s|latitude|longitude|geolocation|geojson|wgs84|trajectory).*",
+        "(?i).*(?:^|_)(?:lat|lng)(?:_|$).*",
+        "(?i).*(?:user_|device_|raw_)?location_(?:lat|lng|coord|point|address|geo).*",
         "(?i).*轨迹.*",
-        "(?i).*经纬.*"
+        "(?i).*经纬度.*"
       ],
       "comment_patterns": [
-        "定位",
+        "精确定位",
+        "地理位置坐标",
+        "GPS",
+        "经纬度",
+        "行踪轨迹",
         "轨迹"
       ],
       "tags": [
@@ -343,7 +370,8 @@
       "id": "vehicle_plate",
       "name": "vehicle",
       "column_patterns": [
-        "(?i).*(license_plate|plate_no|vehicle_no|vin|frame_no|car_plate).*",
+        "(?i).*(license_plate|plate_no|vehicle_no|car_plate|frame_no).*",
+        "(?i).*(?:^|[^a-z])vin(?:[^a-z]|$).*",
         "(?i).*车牌.*",
         "(?i).*车架号.*"
       ],
@@ -416,6 +444,21 @@
       "priority": 92
     },
     {
+      "id": "crypto_salt",
+      "name": "password_salt",
+      "column_patterns": [
+        "(?i)^(salt|password_salt|pwd_salt|passwd_salt)$",
+        "(?i).*盐值.*"
+      ],
+      "tags": [
+        "identifier_technical"
+      ],
+      "standard_refs": [
+        "Cryptographic auxiliary; not direct PII"
+      ],
+      "priority": 87
+    },
+    {
       "id": "password_secret",
       "name": "credential",
       "column_patterns": [
@@ -473,15 +516,22 @@
       "id": "address_postal",
       "name": "address_postal",
       "column_patterns": [
-        "(?i).*(address|postal|zipcode|zip_code|postcode|mailing|street|road|district|province|city_code).*",
-        "(?i)^mail_addr$",
+        "(?i).*(?:street|road|mailing_address|postal|zipcode|zip_code|postcode|district|city_code|residential_address).*",
+        "(?i).*(?:^|_)(?:province|region)_?(?:name|addr|address)(?:_|$).*",
         "(?i).*地址.*",
         "(?i).*邮编.*"
       ],
       "comment_keywords": [
-        "地址",
+        "居住地址",
+        "收货地址",
+        "联系地址",
+        "邮寄地址",
+        "通讯地址",
+        "详细地址",
+        "邮政编码",
         "邮编",
-        "address"
+        "mailing address",
+        "street address"
       ],
       "tags": [
         "personal_identifier",
@@ -589,8 +639,11 @@
       "id": "network_device",
       "name": "network_device",
       "column_patterns": [
-        "(?i).*(ip_addr|ip_address|client_ip|remote_ip|mac_addr|imei|device_id|terminal_id).*",
-        "(?i).*手机串码.*"
+        "(?i)^ip$",
+        "(?i).*(ip_addr|ip_address|client_ip|remote_ip|login_ip|src_ip|mac_addr|imei|device_uuid|android_id|idfa|gaid).*",
+        "(?i).*(?:^|_)(?:device|dev)_id(?:_|$).*",
+        "(?i).*(?:^|_)terminal_id(?:_|$).*",
+        "(?i).*手机串号.*"
       ],
       "column_keywords": [
         "imei",
@@ -610,7 +663,7 @@
       "id": "education_job",
       "name": "education_job",
       "column_patterns": [
-        "(?i).*(education|degree|school|university|employer|occupation|title|position|resume).*",
+        "(?i).*(education|degree|school|university|employer|occupation|job_title|work_title|career|profession|resume).*",
         "(?i).*学历.*",
         "(?i).*就读.*",
         "(?i).*职位.*",
@@ -661,6 +714,32 @@
         "GDPR personal data"
       ],
       "priority": 82
+    },
+    {
+      "id": "encrypted_profile_payload",
+      "name": "encrypted_profile_payload",
+      "table_patterns": [
+        "(?i).*(collect_user_data|collect_device_data).*"
+      ],
+      "column_patterns": [
+        "(?i)^data$"
+      ],
+      "comment_patterns": [
+        "加密",
+        "个人信息",
+        "硬件标识",
+        "bdaddr",
+        "bd_addr"
+      ],
+      "tags": [
+        "personal_identifier",
+        "device_network"
+      ],
+      "standard_refs": [
+        "Encrypted payload tied to user/device field"
+      ],
+      "priority": 80,
+      "require_table_and_field": true
     }
   ]
 }
