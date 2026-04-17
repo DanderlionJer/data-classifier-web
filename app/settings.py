@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from functools import lru_cache
 from urllib.parse import urlparse
 
 
@@ -63,7 +62,6 @@ def _default_model(provider: str) -> str:
     return "gpt-4o-mini"
 
 
-@lru_cache
 def get_ai_settings() -> AISettings:
     key = (os.environ.get("DATA_CLASSIFIER_AI_API_KEY") or "").strip()
     explicit_provider = os.environ.get("DATA_CLASSIFIER_AI_PROVIDER") or "auto"

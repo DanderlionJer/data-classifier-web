@@ -23,5 +23,30 @@
     "tax_personal": 4,
     "criminal_justice": 4,
     "important_data_placeholder": 5
+  },
+  "tag_labels_zh": {
+    "public": "公开数据",
+    "login_alias": "登录名/昵称",
+    "internal_business": "内部业务数据",
+    "internal_surrogate_id": "内部代理主键",
+    "identifier_technical": "技术标识符",
+    "contact": "联系信息",
+    "personal_identifier": "个人标识信息",
+    "device_network": "设备与网络标识",
+    "vehicle_plate": "车牌号码",
+    "ad_identifier": "广告标识",
+    "financial": "金融账户与交易",
+    "health": "健康医疗",
+    "biometric": "生物识别",
+    "location_trace": "行踪轨迹",
+    "child_data": "儿童个人信息",
+    "sensitive_cn": "敏感个人信息",
+    "gdpr_special_category": "GDPR特殊类别数据",
+    "gov_id": "政务证件/法定身份标识",
+    "credential": "访问凭证/密钥",
+    "security": "安全保密信息",
+    "tax_personal": "涉税个人信息",
+    "criminal_justice": "刑事司法数据",
+    "important_data_placeholder": "重要数据（待核定）"
   }
 }

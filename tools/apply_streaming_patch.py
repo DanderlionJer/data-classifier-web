@@ -30,7 +30,9 @@ build_fn = '''async def _build_classify_response(
 ) -> ClassifyResponse:
     if progress:
         await progress(8, "\\u89c4\\u5219\\u5f15\\u64ce\\u5206\\u7c7b\\u4e2d\\u2026")
-    classified, summary = classify_fields(fields, frameworks=fw_sel)
+    classified, summary, category_summary, category_labels, tag_labels_zh = classify_fields(
+        fields, frameworks=fw_sel
+    )
     ai_applied = False
     ai_model = None
     ai_provider = None

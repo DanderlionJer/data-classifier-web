@@ -387,6 +387,40 @@ def rules() -> list[dict]:
             "priority": 55,
         },
         {
+            "id": "device_serial",
+            "name": "device_serial_sn",
+            "column_patterns": [
+                r"(?i)^sn$",
+                r"(?i)^serial(_(no|number|num|code|id))?$",
+                r"(?i)(?:^|_)(device|dev|hw|hardware|machine|product|board|asset|phone|modem|tablet|laptop|handset|imei|meid|esn|mainboard|mb|pcb)_sn(?:_|$)",
+                r"(?i)(?:^|_)sn_(no|number|num|code|id)$",
+                r"(?i)^(hw|hardware|factory|manufacture|mfg)_serial(_(no|number|num|code|id))?$",
+                r"(?i)(?:^|_)(device|dev|hw|hardware|machine|phone|modem|board|asset)_(serial|"
+                + "\u5e8f\u5217"
+                + r")(?:_(?:no|number|num|code|id))?$",
+                r"(?i)^(item|line|sku|batch|lot|warranty|unit)_(serial|sn)(_(no|number|num|code|id))?$",
+                r"(?i).*" + "\u5e8f\u5217\u53f7" + r".*",
+                r"(?i).*" + "\u8bbe\u5907\u4e32\u53f7" + r".*",
+                r"(?i).*" + "\u51fa\u5382\u5e8f\u5217" + r".*",
+                r"(?i).*" + "\u673a\u8eab\u4e32\u7801" + r".*",
+            ],
+            "comment_patterns": [
+                "\u5e8f\u5217\u53f7",
+                "\u8bbe\u5907\u5e8f\u5217",
+                "\u786c\u4ef6\u5e8f\u5217",
+                "\u51fa\u5382\u5e8f\u5217",
+                r"(?i)\bsn\b",
+                r"(?i)serial\s*no",
+            ],
+            "tags": ["device_network", "personal_identifier", "sensitive_cn"],
+            "standard_refs": [
+                "GB/T 35273 sensitive personal info (device identifier context)",
+                "Hardware / device serial may identify terminal and natural person",
+            ],
+            "suppresses": ["identifier_technical"],
+            "priority": 78,
+        },
+        {
             "id": "network_device",
             "name": "network_device",
             "column_patterns": [

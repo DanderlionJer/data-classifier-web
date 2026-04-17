@@ -1,0 +1,540 @@
+{
+  "meta": {
+    "version": "1.2",
+    "how_to_extend_zh": "制度清单在 app/frameworks.py 的 STANDARDS_REGISTRY 与 PRIVACY_LAW_CORE 维护；国家默认勾选在 countries[] 的 framework_ids。新增标准：先注册 id，再更新规则 frameworks 映射与国家列表。",
+    "iso_note_zh": "国家/地区使用 ISO 3166-1 alpha-2（如 NL、US、CN、JP、KR）。"
+  },
+  "countries": [
+    {
+      "id": "AE",
+      "label_zh": "阿联酋",
+      "label_en": "United Arab Emirates",
+      "framework_ids": [
+        "PDPL_AE"
+      ],
+      "notes_zh": "阿联酋联邦 PDPL 等；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "AR",
+      "label_zh": "阿根廷",
+      "label_en": "Argentina",
+      "framework_ids": [
+        "AR_PDPA"
+      ],
+      "notes_zh": "阿根廷个人数据保护法 Ley 25.326 等；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "AT",
+      "label_zh": "奥地利",
+      "label_en": "Austria",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "AU",
+      "label_zh": "澳大利亚",
+      "label_en": "Australia",
+      "framework_ids": [
+        "PRIVACY_ACT_AU"
+      ],
+      "notes_zh": "澳大利亚 Privacy Act 1988 等；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "BE",
+      "label_zh": "比利时",
+      "label_en": "Belgium",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "BG",
+      "label_zh": "保加利亚",
+      "label_en": "Bulgaria",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "BR",
+      "label_zh": "巴西",
+      "label_en": "Brazil",
+      "framework_ids": [
+        "LGPD"
+      ],
+      "notes_zh": "巴西 LGPD；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "CA",
+      "label_zh": "加拿大",
+      "label_en": "Canada",
+      "framework_ids": [
+        "PIPEDA_CA"
+      ],
+      "notes_zh": "加拿大 PIPEDA / 各省隐私法；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "CH",
+      "label_zh": "瑞士",
+      "label_en": "Switzerland",
+      "framework_ids": [
+        "FADP"
+      ],
+      "notes_zh": "瑞士 FADP；非欧盟。规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "CN",
+      "label_zh": "中国",
+      "label_en": "China",
+      "framework_ids": [
+        "35273",
+        "43697",
+        "PIPL"
+      ],
+      "notes_zh": "常见国标分类分级与个人信息规范组合；可手动增加 GDPR 等跨境场景。"
+    },
+    {
+      "id": "CO",
+      "label_zh": "哥伦比亚",
+      "label_en": "Colombia",
+      "framework_ids": [
+        "CO_PDPA"
+      ],
+      "notes_zh": "哥伦比亚 Ley 1581 等；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "CY",
+      "label_zh": "塞浦路斯",
+      "label_en": "Cyprus",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "CZ",
+      "label_zh": "捷克",
+      "label_en": "Czechia",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "DE",
+      "label_zh": "德国",
+      "label_en": "Germany",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国，适用 GDPR。"
+    },
+    {
+      "id": "DK",
+      "label_zh": "丹麦",
+      "label_en": "Denmark",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "EE",
+      "label_zh": "爱沙尼亚",
+      "label_en": "Estonia",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "ES",
+      "label_zh": "西班牙",
+      "label_en": "Spain",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "FI",
+      "label_zh": "芬兰",
+      "label_en": "Finland",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "FR",
+      "label_zh": "法国",
+      "label_en": "France",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国，适用 GDPR。"
+    },
+    {
+      "id": "GB",
+      "label_zh": "英国",
+      "label_en": "United Kingdom",
+      "framework_ids": [
+        "UK_GDPR_DPA"
+      ],
+      "notes_zh": "默认 UK_GDPR_DPA；与欧盟处理活动并存时请自行增删 GDPR。"
+    },
+    {
+      "id": "GR",
+      "label_zh": "希腊",
+      "label_en": "Greece",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "HK",
+      "label_zh": "中国香港",
+      "label_en": "Hong Kong",
+      "framework_ids": [
+        "PDPO_HK"
+      ],
+      "notes_zh": "香港 PDPO；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "HR",
+      "label_zh": "克罗地亚",
+      "label_en": "Croatia",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "HU",
+      "label_zh": "匈牙利",
+      "label_en": "Hungary",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "ID",
+      "label_zh": "印度尼西亚",
+      "label_en": "Indonesia",
+      "framework_ids": [
+        "PDP_ID"
+      ],
+      "notes_zh": "印尼 UU PDP 等；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "IE",
+      "label_zh": "爱尔兰",
+      "label_en": "Ireland",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国，适用 GDPR。"
+    },
+    {
+      "id": "IL",
+      "label_zh": "以色列",
+      "label_en": "Israel",
+      "framework_ids": [
+        "IL_PRIVACY"
+      ],
+      "notes_zh": "以色列隐私保护法；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "IN",
+      "label_zh": "印度",
+      "label_en": "India",
+      "framework_ids": [
+        "DPDPA_IN"
+      ],
+      "notes_zh": "印度 DPDPA 等；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "IS",
+      "label_zh": "冰岛",
+      "label_en": "Iceland",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧洲经济区成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "IT",
+      "label_zh": "意大利",
+      "label_en": "Italy",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "JP",
+      "label_zh": "日本",
+      "label_en": "Japan",
+      "framework_ids": [
+        "APPI"
+      ],
+      "notes_zh": "日本 APPI（个人信息保护法）；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "KR",
+      "label_zh": "韩国",
+      "label_en": "Korea, Republic of",
+      "framework_ids": [
+        "PIPA"
+      ],
+      "notes_zh": "韩国 PIPA；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "LI",
+      "label_zh": "列支敦士登",
+      "label_en": "Liechtenstein",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧洲经济区成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "LT",
+      "label_zh": "立陶宛",
+      "label_en": "Lithuania",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "LU",
+      "label_zh": "卢森堡",
+      "label_en": "Luxembourg",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "LV",
+      "label_zh": "拉脱维亚",
+      "label_en": "Latvia",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "MO",
+      "label_zh": "中国澳门",
+      "label_en": "Macao",
+      "framework_ids": [
+        "PDPA_MO"
+      ],
+      "notes_zh": "澳门个人资料保护法；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "MT",
+      "label_zh": "马耳他",
+      "label_en": "Malta",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "MX",
+      "label_zh": "墨西哥",
+      "label_en": "Mexico",
+      "framework_ids": [
+        "LFPDPPP_MX"
+      ],
+      "notes_zh": "墨西哥 LFPDPPP；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "MY",
+      "label_zh": "马来西亚",
+      "label_en": "Malaysia",
+      "framework_ids": [
+        "PDPA_MY"
+      ],
+      "notes_zh": "马来西亚 PDPA 2010；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "NL",
+      "label_zh": "荷兰",
+      "label_en": "Netherlands",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国，适用 GDPR。"
+    },
+    {
+      "id": "NO",
+      "label_zh": "挪威",
+      "label_en": "Norway",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧洲经济区成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "NZ",
+      "label_zh": "新西兰",
+      "label_en": "New Zealand",
+      "framework_ids": [
+        "PDPA_NZ"
+      ],
+      "notes_zh": "新西兰 Privacy Act 2020；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "PH",
+      "label_zh": "菲律宾",
+      "label_en": "Philippines",
+      "framework_ids": [
+        "DPA_PH"
+      ],
+      "notes_zh": "菲律宾 Data Privacy Act；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "PL",
+      "label_zh": "波兰",
+      "label_en": "Poland",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "PT",
+      "label_zh": "葡萄牙",
+      "label_en": "Portugal",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "RO",
+      "label_zh": "罗马尼亚",
+      "label_en": "Romania",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "SA",
+      "label_zh": "沙特阿拉伯",
+      "label_en": "Saudi Arabia",
+      "framework_ids": [
+        "PDPL_SA"
+      ],
+      "notes_zh": "沙特 PDPL 等；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "SE",
+      "label_zh": "瑞典",
+      "label_en": "Sweden",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "SG",
+      "label_zh": "新加坡",
+      "label_en": "Singapore",
+      "framework_ids": [
+        "PDPA_SG"
+      ],
+      "notes_zh": "新加坡 PDPA；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "SI",
+      "label_zh": "斯洛文尼亚",
+      "label_en": "Slovenia",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "SK",
+      "label_zh": "斯洛伐克",
+      "label_en": "Slovakia",
+      "framework_ids": [
+        "GDPR"
+      ],
+      "notes_zh": "欧盟成员国；本工具以 GDPR 标准 id 筛选规则，可手动增删。"
+    },
+    {
+      "id": "TH",
+      "label_zh": "泰国",
+      "label_en": "Thailand",
+      "framework_ids": [
+        "PDPA_TH"
+      ],
+      "notes_zh": "泰国 PDPA；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "TR",
+      "label_zh": "土耳其",
+      "label_en": "Türkiye",
+      "framework_ids": [
+        "KVKK"
+      ],
+      "notes_zh": "土耳其 KVKK；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "TW",
+      "label_zh": "中国台湾",
+      "label_en": "Taiwan, Province of China",
+      "framework_ids": [
+        "PDPA_TW"
+      ],
+      "notes_zh": "台湾个人资料保护法；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "US",
+      "label_zh": "美国",
+      "label_en": "United States",
+      "framework_ids": [
+        "EO14117",
+        "US_HIPAA",
+        "US_CA_CPRA",
+        "US_FED_CYBER",
+        "NIST_CSF",
+        "US_GLBA",
+        "US_COPPA",
+        "PCI_DSS"
+      ],
+      "notes_zh": "默认含 EO14117、HIPAA、CPRA、联邦网络安全（CISA 语境）、NIST CSF、GLBA、COPPA、PCI DSS 等可选项；请按实际场景手动精简。"
+    },
+    {
+      "id": "VN",
+      "label_zh": "越南",
+      "label_en": "Viet Nam",
+      "framework_ids": [
+        "VN_PDPD"
+      ],
+      "notes_zh": "越南个人数据相关法令（如 Decree 13/2023/ND-CP 等）；规则筛选见已注册 framework id；可手动增删适用标准。"
+    },
+    {
+      "id": "ZA",
+      "label_zh": "南非",
+      "label_en": "South Africa",
+      "framework_ids": [
+        "POPIA"
+      ],
+      "notes_zh": "南非 POPIA；规则筛选见已注册 framework id；可手动增删适用标准。"
+    }
+  ]
+}

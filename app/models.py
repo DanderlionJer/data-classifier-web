@@ -21,6 +21,13 @@ class RuleMatch(BaseModel):
     standard_refs: list[str] = Field(default_factory=list)
 
 
+class DataCategory(BaseModel):
+    """High-level data type derived from rule tags (see app/rules/tag_categories.json)."""
+
+    id: str
+    label_zh: str
+
+
 class AIEnhancementInfo(BaseModel):
     model: str | None = None
     baseline_level: int
@@ -34,6 +41,11 @@ class ClassifiedField(BaseModel):
     field: FieldDescriptor
     level: int
     tags: list[str]
+    tags_zh: list[str] = Field(
+        default_factory=list,
+        description="Chinese label per tags[] entry (same order); empty string if unmapped.",
+    )
+    categories: list[DataCategory] = Field(default_factory=list)
     matches: list[RuleMatch]
     rationale: str
     ai: AIEnhancementInfo | None = None
@@ -42,6 +54,13 @@ class ClassifiedField(BaseModel):
 class ClassifyResponse(BaseModel):
     fields: list[ClassifiedField]
     summary: dict[str, int]  # level -> count
+    category_summary: dict[str, int] = Field(default_factory=dict)
+    category_labels: dict[str, str] = Field(default_factory=dict)
+    tag_labels_zh: dict[str, str] = Field(default_factory=dict)
+    country: str | None = Field(
+        default=None,
+        description="ISO 3166-1 alpha-2 from request when provided (audit / UI).",
+    )
     applied_frameworks: list[str] = Field(default_factory=list)
     ai_enhancement_applied: bool = False
     ai_model: str | None = None

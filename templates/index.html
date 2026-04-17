@@ -9,7 +9,7 @@
 <body>
   <header class="header">
     <h1>数据分类分级</h1>
-    <p class="sub">上传 JSON 或 Excel（.xlsx），按规则输出 1–5 级与标签。对齐 <strong>GB/T 35273-2020、PIPL/数据安全法、GDPR</strong> 等常见框架；<a href="/api/compliance-framework" target="_blank" rel="noopener">合规说明 JSON</a>。规则与格式见 <code>app/rules/</code>。</p>
+    <p class="sub">上传 JSON、CSV 或 Excel（.xlsx），按规则输出 <strong>数据类别</strong>、1–5 级与标签。类别由 <code>app/rules/tag_categories.json</code> 将规则标签映射为业务大类；对齐 <strong>GB/T 35273-2020、PIPL/数据安全法、GDPR</strong> 等常见框架；<a href="/api/compliance-framework" target="_blank" rel="noopener">合规说明 JSON</a>。规则与格式见 <code>app/rules/</code>。CSV 建议使用 UTF-8（可带 BOM），列名与 Excel 相同（如 column、table、comment 等）。</p>
   </header>
 
   <main class="layout">
@@ -17,20 +17,29 @@
       <h2>上传</h2>
       <form id="upload-form" class="form">
         <label class="file">
-          <input type="file" id="file" name="file" accept=".json,.xlsx,.xls" required />
+          <input type="file" id="file" name="file" accept=".json,.csv,.xlsx,.xls" required />
           <span>选择文件</span>
         </label>
         <p id="file-feedback" class="file-feedback" hidden></p>
+        <div class="country-row" id="country-row">
+          <label class="country-label" for="country-select">国家/地区</label>
+          <select id="country-select" name="country" class="country-select" aria-describedby="country-hint">
+            <option value="">加载中…</option>
+          </select>
+          <p class="hint country-hint" id="country-hint">
+            选择后将勾选该国/地区默认适用的标准（见 <code>app/rules/country_frameworks.json</code>），仍可手动增删。不选则为全部规则。
+          </p>
+        </div>
         <fieldset class="standards-fieldset" id="standards-fieldset">
           <legend>适用标准（可多选；不选则使用全部规则）</legend>
           <p class="hint" id="standards-loading">加载标准列表…</p>
         </fieldset>
-        <div class="ai-enhance-wrap" id="ai-enhance-wrap" hidden>
+        <div class="ai-enhance-wrap" id="ai-enhance-wrap">
           <label class="chk">
-            <input type="checkbox" id="ai-enhance" name="ai_enhance_cb" />
+            <input type="checkbox" id="ai-enhance" name="ai_enhance_cb" disabled />
             AI 增强（基于规则结果，由部署配置的外部模型复核；仅元数据会发往模型服务商）
           </label>
-          <p class="hint" id="ai-enhance-hint"></p>
+          <p class="hint" id="ai-enhance-hint">正在检测 AI 配置…</p>
         </div>
         <div id="progress-wrap" class="progress-wrap" hidden>
           <div class="progress-bar-outer" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -50,6 +59,11 @@
       <div id="summary" class="chips"></div>
     </section>
 
+    <section class="card" id="category-summary-card" hidden>
+      <h2>数据类别分布</h2>
+      <div id="category-summary" class="chips chips-cat"></div>
+    </section>
+
     <section class="card full" id="result-card" hidden>
       <h2>结果</h2>
       <div class="table-wrap">
@@ -57,6 +71,7 @@
           <thead>
             <tr>
               <th>级别</th>
+              <th>数据类别</th>
               <th>库</th>
               <th>模式</th>
               <th>表</th>
@@ -74,11 +89,15 @@
     </section>
   </main>
 
+  <script type="application/json" id="standards-embedded">{{ standards_embed_json }}</script>
+
   <script>
     const form = document.getElementById("upload-form");
     const statusEl = document.getElementById("status");
     const summaryCard = document.getElementById("summary-card");
     const summaryEl = document.getElementById("summary");
+    const categorySummaryCard = document.getElementById("category-summary-card");
+    const categorySummaryEl = document.getElementById("category-summary");
     const resultCard = document.getElementById("result-card");
     const gridBody = document.querySelector("#grid tbody");
     const standardsFieldset = document.getElementById("standards-fieldset");
@@ -86,6 +105,10 @@
     const aiEnhanceWrap = document.getElementById("ai-enhance-wrap");
     const aiEnhanceHint = document.getElementById("ai-enhance-hint");
     const aiEnhanceCb = document.getElementById("ai-enhance");
+    const countrySelect = document.getElementById("country-select");
+
+    /** @type {Record<string, object>} */
+    let countriesById = {};
 
     /** Base URL for same-origin API calls (always ends with /). */
     function apiRootUrl() {
@@ -112,39 +135,141 @@
       return o;
     }
 
+    function renderStandardsCheckboxes(list) {
+      if (!Array.isArray(list)) {
+        standardsLoading.textContent = "标准列表格式异常，已跳过筛选选项。";
+        return;
+      }
+      standardsLoading.remove();
+      for (const s of list) {
+        const lab = document.createElement("label");
+        lab.className = "chk";
+        const tip = (s.title_zh || "").trim() || (s.title_en || "").trim();
+        const assoc = (s.associated_country_ids || []).filter(Boolean);
+        if (tip) lab.title = tip;
+        if (assoc.length) {
+          lab.title = (lab.title ? lab.title + "\n" : "") + "\u5173\u8054\u56fd\u5bb6/\u5730\u533a: " + assoc.join(", ");
+        }
+        const inp = document.createElement("input");
+        inp.type = "checkbox";
+        inp.name = "fw";
+        inp.value = s.id;
+        lab.appendChild(inp);
+        lab.appendChild(document.createTextNode(" " + (s.code || s.id)));
+        standardsFieldset.appendChild(lab);
+      }
+    }
+
+    function applyCountryToStandards() {
+      if (!countrySelect) return;
+      const id = countrySelect.value;
+      const inputs = form.querySelectorAll('input[name="fw"]');
+      if (!id) {
+        for (const inp of inputs) {
+          inp.checked = false;
+        }
+        return;
+      }
+      const row = countriesById[id];
+      if (!row) return;
+      const want = new Set(row.framework_ids || []);
+      for (const inp of inputs) {
+        inp.checked = want.has(inp.value);
+      }
+    }
+
+    async function loadCountries() {
+      if (!countrySelect || window.location.protocol === "file:") {
+        if (countrySelect) {
+          countrySelect.innerHTML =
+            '<option value="">\u4e0d\u6307\u5b9a\uff08\u8bf7\u901a\u8fc7\u670d\u52a1\u5730\u5740\u8bbf\u95ee\u4ee5\u52a0\u8f7d\u56fd\u5bb6\u5217\u8868\uff09</option>';
+        }
+        return;
+      }
+      try {
+        const primary = new URL("api/countries", apiRootUrl()).href;
+        const fallback = new URL("/api/countries", window.location.origin).href;
+        let res = await fetch(primary, sameOriginFetchOpts());
+        if (!res.ok && fallback !== primary) {
+          res = await fetch(fallback, sameOriginFetchOpts());
+        }
+        if (!res.ok) {
+          console.warn(
+            "GET countries failed:",
+            res.status,
+            primary,
+            fallback !== primary ? fallback : ""
+          );
+          countrySelect.innerHTML =
+            '<option value="">\u4e0d\u6307\u5b9a\uff08HTTP ' +
+            res.status +
+            "\uff0c\u65e0\u6cd5\u52a0\u8f7d\u56fd\u5bb6\u5217\u8868\uff09</option>";
+          return;
+        }
+        const data = await res.json();
+        const list = data.countries || [];
+        countriesById = Object.fromEntries(list.map((c) => [c.id, c]));
+        countrySelect.innerHTML =
+          '<option value="">\u4e0d\u6307\u5b9a\uff08\u5168\u90e8\u89c4\u5219\uff09</option>';
+        const countryHintEl = document.getElementById("country-hint");
+        if (!list.length) {
+          if (countryHintEl) {
+            countryHintEl.textContent =
+              "\u670d\u52a1\u8fd4\u56de\u7684\u56fd\u5bb6\u5217\u8868\u4e3a\u7a7a\uff1a\u8bf7\u786e\u8ba4\u5df2\u90e8\u7f72 app/rules/country_frameworks.json \u5e76\u91cd\u542f\u540e\u7aef\uff08\u6216\u68c0\u67e5\u8fd0\u884c\u7684\u662f\u542b GET /api/countries \u7684\u6700\u65b0\u4ee3\u7801\uff09\u3002";
+          }
+        } else if (countryHintEl) {
+          countryHintEl.textContent =
+            "\u9009\u62e9\u540e\u5c06\u52fe\u9009\u8be5\u56fd/\u5730\u533a\u9ed8\u8ba4\u9002\u7528\u7684\u6807\u51c6\uff08\u89c1 app/rules/country_frameworks.json\uff09\uff0c\u4ecd\u53ef\u624b\u52a8\u589e\u5220\u3002\u4e0d\u9009\u5219\u4e3a\u5168\u90e8\u89c4\u5219\u3002";
+        }
+        for (const c of list) {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = (c.label_zh || c.id) + " (" + c.id + ")";
+          countrySelect.appendChild(opt);
+        }
+        if (!countrySelect.dataset.wired) {
+          countrySelect.dataset.wired = "1";
+          countrySelect.addEventListener("change", applyCountryToStandards);
+        }
+      } catch (e) {
+        console.warn(e);
+        countrySelect.innerHTML =
+          '<option value="">\u4e0d\u6307\u5b9a\uff08\u56fd\u5bb6\u5217\u8868\u52a0\u8f7d\u5931\u8d25\uff09</option>';
+      }
+    }
+
     async function loadStandards() {
       if (window.location.protocol === "file:") {
         standardsLoading.textContent =
           "当前为本地文件打开方式，无法请求接口。请运行应用后使用浏览器访问服务地址（例如 http://127.0.0.1:8767），不要直接双击打开本 HTML。";
         return;
       }
+      const embeddedEl = document.getElementById("standards-embedded");
+      if (embeddedEl) {
+        const raw = (embeddedEl.textContent || "").trim();
+        if (raw) {
+          try {
+            renderStandardsCheckboxes(JSON.parse(raw));
+            return;
+          } catch (e) {
+            console.warn("内嵌标准列表解析失败，将尝试请求 /api/standards", e);
+          }
+        }
+      }
       try {
-        const url = new URL("api/standards", apiRootUrl());
-        const res = await fetch(url.href, sameOriginFetchOpts());
+        const primary = new URL("api/standards", apiRootUrl()).href;
+        const fallback = new URL("/api/standards", window.location.origin).href;
+        let res = await fetch(primary, sameOriginFetchOpts());
+        if (!res.ok && fallback !== primary) {
+          res = await fetch(fallback, sameOriginFetchOpts());
+        }
         if (!res.ok) {
           standardsLoading.textContent =
             "无法加载标准列表（HTTP " + res.status + "）。请确认已通过本应用的服务地址打开页面。";
           return;
         }
         const list = await res.json();
-        if (!Array.isArray(list)) {
-          standardsLoading.textContent = "标准列表格式异常，已跳过筛选选项。";
-          return;
-        }
-        standardsLoading.remove();
-        for (const s of list) {
-          const lab = document.createElement("label");
-          lab.className = "chk";
-          const tip = (s.title_zh || "").trim() || (s.title_en || "").trim();
-          if (tip) lab.title = tip;
-          const inp = document.createElement("input");
-          inp.type = "checkbox";
-          inp.name = "fw";
-          inp.value = s.id;
-          lab.appendChild(inp);
-          lab.appendChild(document.createTextNode(" " + (s.code || s.id)));
-          standardsFieldset.appendChild(lab);
-        }
+        renderStandardsCheckboxes(list);
       } catch (e) {
         if (e && (e.name === "AbortError" || e.name === "TimeoutError")) {
           standardsLoading.textContent =
@@ -157,23 +282,39 @@
       }
     }
     async function loadAiStatus() {
-      if (window.location.protocol === "file:") return;
+      if (window.location.protocol === "file:") {
+        aiEnhanceHint.textContent =
+          "通过 file:// 打开页面时无法请求 /api/ai-status。请用服务地址访问（如 http://127.0.0.1:8767）。";
+        return;
+      }
       try {
         const url = new URL("api/ai-status", apiRootUrl());
         const res = await fetch(url.href, sameOriginFetchOpts());
-        if (!res.ok) return;
+        if (!res.ok) {
+          aiEnhanceHint.textContent =
+            "无法读取 AI 配置（HTTP " + res.status + "）。请确认 GET /api/ai-status 可访问。";
+          return;
+        }
         const st = await res.json();
         if (st.available) {
-          aiEnhanceWrap.hidden = false;
+          aiEnhanceCb.disabled = false;
           const host = st.base_url_host ? " · " + st.base_url_host : "";
           const prov = st.provider ? st.provider + " / " : "";
           aiEnhanceHint.textContent = "已启用：" + prov + "模型 " + (st.model || "") + host;
+        } else {
+          aiEnhanceCb.disabled = true;
+          aiEnhanceCb.checked = false;
+          aiEnhanceHint.textContent =
+            "未检测到 DATA_CLASSIFIER_AI_API_KEY。请在项目根目录配置 .env 或环境变量；若已在系统中设置为空字符串，请删除该变量或改用本工具加载的 .env（见 app/main.py load_dotenv）。";
         }
       } catch (e) {
+        aiEnhanceHint.textContent =
+          "无法连接 /api/ai-status。请用后端提供的主机与端口打开本页，并检查浏览器控制台。";
         console.error(e);
       }
     }
 
+    loadCountries();
     loadStandards();
     loadAiStatus();
 
@@ -270,6 +411,7 @@
 
       statusEl.textContent = "";
       summaryCard.hidden = true;
+      categorySummaryCard.hidden = true;
       resultCard.hidden = true;
       gridBody.innerHTML = "";
 
@@ -278,6 +420,9 @@
       const fws = selectedFrameworks();
       if (fws.length) {
         fd.append("frameworks", JSON.stringify(fws));
+      }
+      if (countrySelect && countrySelect.value) {
+        fd.append("country", countrySelect.value);
       }
       if (aiEnhanceCb && aiEnhanceCb.checked) {
         fd.append("ai_enhance", "true");
@@ -323,6 +468,9 @@
           stMsg += " \u00b7 AI \u5df2\u589e\u5f3a";
           if (data.ai_model) stMsg += "\uff08" + data.ai_model + "\uff09";
         }
+        if (data.country) {
+          stMsg += " \u00b7 \u56fd\u5bb6/\u5730\u533a " + data.country;
+        }
         statusEl.textContent = stMsg;
 
         const sums = data.summary || {};
@@ -342,10 +490,38 @@
           .join("");
         summaryCard.hidden = false;
 
+        const catSums = data.category_summary || {};
+        const catLabels = data.category_labels || {};
+        const catKeys = Object.keys(catSums).sort((a, b) => catSums[b] - catSums[a]);
+        if (catKeys.length) {
+          categorySummaryEl.innerHTML = catKeys
+            .map((id) => {
+              const lab = catLabels[id] || id;
+              return (
+                '<span class="chip chip-cat" title="' +
+                escapeHtml(id) +
+                '">' +
+                escapeHtml(lab) +
+                "\uff1a" +
+                catSums[id] +
+                "</span>"
+              );
+            })
+            .join("");
+          categorySummaryCard.hidden = false;
+        } else {
+          categorySummaryEl.innerHTML = "";
+        }
+
         for (const row of data.fields) {
           const fld = row.field;
           const tr = document.createElement("tr");
-          const tags = (row.tags || []).join(", ");
+          const tagsZh = (row.tags_zh || []).filter((s) => String(s || "").trim());
+          const tags = tagsZh.length ? tagsZh.join("\uff1b ") : "";
+          const catCell = (row.categories || [])
+            .map((c) => c.label_zh || c.id || "")
+            .filter(Boolean)
+            .join("\uff1b ");
           const rationale = row.rationale || "";
           let aiCell = "\u2014";
           if (row.ai) {
@@ -367,6 +543,7 @@
           }
           tr.innerHTML = `
             <td><span class="badge ${levelClass(row.level)}">${row.level}</span></td>
+            <td class="categories-cell">${escapeHtml(catCell || "\u2014")}</td>
             <td>${escapeHtml(fld.database)}</td>
             <td>${escapeHtml(fld.schema ?? fld.schema_name)}</td>
             <td>${escapeHtml(fld.table)}</td>
@@ -387,7 +564,6 @@
         submitBtn.disabled = false;
       }
     });
-);
 
     function escapeHtml(s) {
       return String(s ?? "").replace(/[&<>"']/g, c => ({

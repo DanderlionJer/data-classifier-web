@@ -1,6 +1,6 @@
 # Data-Classify
 
-Web app: upload JSON or Excel metadata (database / table / column / comment), classify fields into levels 1-5 using configurable rules.
+Web app: upload JSON or Excel metadata (database / table / column / comment), classify fields into **levels 1–5**, **rule tags**, and **high-level data categories** (business-facing types derived from tags via a separate mapping file).
 
 ## Run
 
@@ -14,7 +14,35 @@ Open http://127.0.0.1:8767
 ## Config
 
 - `app/rules/default_rules.json` — matching rules and tags
-- `app/rules/level_mapping.json` — tag to level (1-5)
+- `app/rules/level_mapping.json` — `tag_levels` (tag → sensitivity 1–5) and optional `tag_labels_zh` (tag → Chinese label for UI). Tags with no `tag_labels_zh` entry show **no** Chinese in the web “标签” column or in `tags_zh` (empty strings only).
+- `app/rules/tag_categories.json` — tag → **data category** id, plus `categories` (id → Chinese label). Fields with no matching rules default to category `general_public` (“公开与一般数据”). **File must be UTF-8** (not UTF-16).
+- `app/rules/country_frameworks.json` — **country / region → default framework ids** (ISO 3166-1 alpha-2, e.g. `NL` → `GDPR`, `US` → `EO14117`, `CN` → `35273` + `43697`). `meta.how_to_extend_zh` describes how to add countries or attach new standards after registering them in `app/frameworks.py` (`STANDARDS_REGISTRY`).
+
+## API
+
+- `GET /api/countries` — `meta` from `country_frameworks.json` plus validated `countries[]` (`id`, `label_zh`, `framework_ids`, …).
+- `GET /api/standards` — each standard includes `associated_country_ids` (reverse index from the country file).
+
+`POST /api/classify` form fields:
+
+- `frameworks` — JSON array of framework ids (optional). If **non-empty**, it determines rule filtering.
+- `country` — optional ISO code. If `frameworks` is **omitted or empty**, the country’s `framework_ids` from `country_frameworks.json` are used. Invalid `country` → `422`.
+
+## API output (`POST /api/classify`)
+
+Each field in `fields[]` includes:
+
+- `level`, `tags` (internal ids), `tags_zh` (Chinese per `tags` entry, same order; `""` if unmapped), `matches`, `rationale` (tag lines in rationale use Chinese only when mapped)
+- `categories`: array of `{ "id", "label_zh" }` — one or more data types for that column (from final tags after suppression)
+
+Top-level response also includes:
+
+- `category_summary`: `{ "<category_id>": <count>, ... }` — counts how many fields were assigned each category (a field with multiple categories increments each)
+- `category_labels`: full id → `label_zh` map from `tag_categories.json` (for UI legends)
+- `tag_labels_zh`: tag id → Chinese label from `level_mapping.json` (entries with empty values are omitted)
+- `country`: echoed ISO code when the client sent `country` (audit / UI)
+
+The MCP tool `classify_metadata_fields` accepts optional `country_iso` and returns the same shape via `ClassifyResponse`. Use `list_country_framework_profiles` for the country → standards table.
 
 ## JSON input
 
@@ -68,8 +96,9 @@ Restart the application process after changing these variables (settings are cac
 
 下列能力存在于本机**未提交**的改动中（`git status` 可见）；其中多个模块当前仍为 **untracked**，未纳入版本库：
 
-- **API**：`GET /api/standards`、`GET /api/ai-status`；`POST /api/classify` 支持表单字段 `frameworks`（适用标准多选）、`ai_enhance`、`stream_progress`（SSE 进度流）
-- **前端**：适用标准多选、已选文件反馈、分类进度条、SSE 解析、可选「AI 增强」勾选区
+- **API**：`GET /api/standards`、`GET /api/countries`、`GET /api/ai-status`；`POST /api/classify` 支持 `country`（ISO）、`frameworks`（适用标准多选）、`ai_enhance`、`stream_progress`（SSE 进度流）
+- **前端**：国家/地区下拉（联动默认标准）、适用标准多选（tooltip 显示关联国家）、已选文件反馈、分类进度条、SSE 解析、可选「AI 增强」勾选区
+- **数据类别**：`app/rules/tag_categories.json`；引擎在 `classify_field` 中根据最终 tags 解析类别；`ClassifyResponse` 含 `categories` / `category_summary` / `category_labels`；首页展示「数据类别分布」与结果表「数据类别」列；AI 增强在改写 tags 后会重新计算类别
 - **代码**：`app/frameworks.py`、`app/ai_enhance.py`、`app/settings.py`（及 `tools/` 下补丁/辅助脚本等，视本机文件而定）
 - **依赖**：以当前 `requirements.txt` 为准（相对已提交版本通常增加如 `httpx`、`python-dotenv` 等）
 

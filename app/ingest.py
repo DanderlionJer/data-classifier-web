@@ -77,8 +77,7 @@ def _row_to_field(row: dict[str, Any]) -> FieldDescriptor | None:
     )
 
 
-def parse_excel(content: bytes) -> list[FieldDescriptor]:
-    df = pd.read_excel(io.BytesIO(content), engine="openpyxl")
+def _dataframe_to_fields(df: pd.DataFrame) -> list[FieldDescriptor]:
     df = _normalize_headers(df)
     fields: list[FieldDescriptor] = []
     for _, row in df.iterrows():
@@ -86,6 +85,16 @@ def parse_excel(content: bytes) -> list[FieldDescriptor]:
         if f:
             fields.append(f)
     return fields
+
+
+def parse_excel(content: bytes) -> list[FieldDescriptor]:
+    df = pd.read_excel(io.BytesIO(content), engine="openpyxl")
+    return _dataframe_to_fields(df)
+
+
+def parse_csv_bytes(content: bytes) -> list[FieldDescriptor]:
+    df = pd.read_csv(io.BytesIO(content), encoding="utf-8-sig")
+    return _dataframe_to_fields(df)
 
 
 def parse_json_bytes(content: bytes) -> list[FieldDescriptor]:
@@ -127,6 +136,8 @@ def sniff_and_parse(filename: str, content: bytes) -> list[FieldDescriptor]:
     name = filename.lower()
     if name.endswith(".json"):
         return parse_json_bytes(content)
+    if name.endswith(".csv"):
+        return parse_csv_bytes(content)
     if name.endswith((".xlsx", ".xls")):
         return parse_excel(content)
     try:

@@ -8,6 +8,12 @@ from typing import Any
 
 import httpx
 
+from app.classifier import (
+    load_tag_category_maps,
+    load_tag_labels_zh,
+    resolve_categories,
+    tags_zh_for_tags,
+)
 from app.models import AIEnhancementInfo, ClassifiedField
 from app.settings import AISettings, get_ai_settings
 
@@ -127,6 +133,10 @@ async def enhance_classified_fields(
     if not settings.api_key:
         return classified
 
+    tag_to_category, category_labels = load_tag_category_maps()
+
+    tag_labels_zh = load_tag_labels_zh()
+
     allowed = _allowed_tags(tag_levels)
     system = _build_system_prompt(allowed)
 
@@ -210,11 +220,17 @@ async def enhance_classified_fields(
                 )
                 rationale_parts = [base.rationale, f"AI({settings.model}): {note or ''}"]
                 new_rationale = "；".join(p for p in rationale_parts if p)
+                new_categories = resolve_categories(
+                    tag_out, tag_to_category, category_labels
+                )
+                new_tags_zh = tags_zh_for_tags(tag_out, tag_labels_zh)
                 out.append(
                     base.model_copy(
                         update={
                             "level": final_level,
                             "tags": tag_out,
+                            "tags_zh": new_tags_zh,
+                            "categories": new_categories,
                             "rationale": new_rationale,
                             "ai": meta,
                         }

@@ -41,13 +41,15 @@ from typing import Any
 
 
 from app.frameworks import enrich_rules_frameworks, filter_rules_by_frameworks
-from app.models import ClassifiedField, FieldDescriptor, RuleMatch
+from app.models import ClassifiedField, DataCategory, FieldDescriptor, RuleMatch
 
 
 
 _RULES_JSON = Path(__file__).resolve().parent / "rules" / "default_rules.json"
 
 _MAPPING_JSON = Path(__file__).resolve().parent / "rules" / "level_mapping.json"
+
+_CATEGORY_JSON = Path(__file__).resolve().parent / "rules" / "tag_categories.json"
 
 
 
@@ -104,6 +106,103 @@ def load_tag_levels(mapping_path: Path | None = None) -> dict[str, int]:
     tags = data.get("tag_levels") or {}
 
     return {str(k): int(v) for k, v in tags.items()}
+
+
+def load_tag_labels_zh(mapping_path: Path | None = None) -> dict[str, str]:
+    """tag id -> Chinese label; keys with empty/whitespace values are omitted."""
+
+    path = mapping_path or _MAPPING_JSON
+
+    data = _load_json(path)
+
+    raw = data.get("tag_labels_zh") or {}
+
+    out: dict[str, str] = {}
+
+    for k, v in raw.items():
+
+        s = str(v).strip()
+
+        if s:
+
+            out[str(k)] = s
+
+    return out
+
+
+def tags_zh_for_tags(sorted_tags: list[str], tag_labels_zh: dict[str, str]) -> list[str]:
+    """Parallel to ``sorted_tags``: Chinese label or empty string if unmapped."""
+
+    return [tag_labels_zh.get(t, "") for t in sorted_tags]
+
+
+def _zh_join_sorted(tag_ids: set[str], tag_labels_zh: dict[str, str]) -> str | None:
+
+    parts = [tag_labels_zh[t] for t in sorted(tag_ids) if t in tag_labels_zh]
+
+    return ", ".join(parts) if parts else None
+
+
+def load_tag_category_maps(
+    category_path: Path | None = None,
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Return (tag -> category id, category id -> Chinese label)."""
+
+    path = category_path or _CATEGORY_JSON
+
+    data = _load_json(path)
+
+    raw_cats = data.get("categories") or {}
+
+    raw_map = data.get("tag_to_category") or {}
+
+    labels = {str(k): str(v) for k, v in raw_cats.items()}
+
+    tag_to = {str(k): str(v) for k, v in raw_map.items()}
+
+    return tag_to, labels
+
+
+def resolve_categories(
+    tags: list[str],
+    tag_to_category: dict[str, str],
+    category_labels: dict[str, str],
+) -> list[DataCategory]:
+    """Map rule tags to high-level data categories; empty tags -> general_public."""
+
+    seen: list[str] = []
+
+    for t in tags:
+
+        cid = tag_to_category.get(t)
+
+        if cid and cid not in seen:
+
+            seen.append(cid)
+
+    if not seen:
+
+        gid = "general_public"
+
+        return [
+            DataCategory(
+                id=gid,
+                label_zh=category_labels.get(gid, "公开与一般数据"),
+            )
+        ]
+
+    out: list[DataCategory] = []
+
+    for cid in sorted(seen):
+
+        out.append(
+            DataCategory(
+                id=cid,
+                label_zh=category_labels.get(cid, cid),
+            )
+        )
+
+    return out
 
 
 
@@ -309,6 +408,12 @@ def classify_field(
 
     tag_levels: dict[str, int],
 
+    tag_to_category: dict[str, str],
+
+    category_labels: dict[str, str],
+
+    tag_labels_zh: dict[str, str],
+
 ) -> ClassifiedField:
 
     col_text = field.column or ""
@@ -389,27 +494,29 @@ def classify_field(
 
         ]
 
-    if tags:
+    tag_list = sorted(tags)
+
+    tags_zh = tags_zh_for_tags(tag_list, tag_labels_zh)
+
+    zh_for_rationale = _zh_join_sorted(tags, tag_labels_zh)
+
+    if zh_for_rationale:
+
+        rationale_parts.append("\u6807\u7b7e: " + zh_for_rationale)
+
+    sup_zh = _zh_join_sorted(suppressed, tag_labels_zh)
+
+    if sup_zh:
 
         rationale_parts.append(
 
-            "\u6807\u7b7e: " + ", ".join(sorted(tags))
-
-        )
-
-    if suppressed:
-
-        rationale_parts.append(
-
-            "\u6309\u4f18\u5148\u7ea7\u5df2\u79fb\u9664\u6807\u7b7e: "
-
-            + ", ".join(sorted(suppressed))
+            "\u6309\u4f18\u5148\u7ea7\u5df2\u79fb\u9664\u6807\u7b7e: " + sup_zh
 
         )
 
     rationale = "\uff1b".join(rationale_parts)
 
-
+    categories = resolve_categories(tag_list, tag_to_category, category_labels)
 
     return ClassifiedField(
 
@@ -417,7 +524,11 @@ def classify_field(
 
         level=level,
 
-        tags=sorted(tags),
+        tags=tag_list,
+
+        tags_zh=tags_zh,
+
+        categories=categories,
 
         matches=matches,
 
@@ -437,9 +548,17 @@ def classify_fields(
 
     mapping_path: Path | None = None,
 
+    category_path: Path | None = None,
+
     frameworks: frozenset[str] | None = None,
 
-) -> tuple[list[ClassifiedField], dict[str, int]]:
+) -> tuple[
+    list[ClassifiedField],
+    dict[str, int],
+    dict[str, int],
+    dict[str, str],
+    dict[str, str],
+]:
 
     rules = load_rules(rules_path)
 
@@ -449,9 +568,25 @@ def classify_fields(
 
     tag_levels = load_tag_levels(mapping_path)
 
-    classified = [classify_field(f, rules, tag_levels) for f in fields]
+    tag_labels_zh = load_tag_labels_zh(mapping_path)
+
+    tag_to_category, category_labels = load_tag_category_maps(category_path)
+
+    classified = [
+        classify_field(
+            f,
+            rules,
+            tag_levels,
+            tag_to_category,
+            category_labels,
+            tag_labels_zh,
+        )
+        for f in fields
+    ]
 
     summary: dict[str, int] = {}
+
+    category_summary: dict[str, int] = {}
 
     for c in classified:
 
@@ -459,5 +594,23 @@ def classify_fields(
 
         summary[k] = summary.get(k, 0) + 1
 
-    return classified, summary
+        for cat in c.categories:
+
+            category_summary[cat.id] = category_summary.get(cat.id, 0) + 1
+
+    return classified, summary, category_summary, category_labels, tag_labels_zh
+
+
+def rollup_category_counts(classified: list[ClassifiedField]) -> dict[str, int]:
+    """Recompute category histogram after tags change (e.g. AI pass)."""
+
+    category_summary: dict[str, int] = {}
+
+    for c in classified:
+
+        for cat in c.categories:
+
+            category_summary[cat.id] = category_summary.get(cat.id, 0) + 1
+
+    return category_summary
 

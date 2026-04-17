@@ -8,6 +8,12 @@ env/
 .env
 .env.*
 !.env.example
+# Local secrets / keys (never commit)
+*.pem
+*.key
+secrets/
+credentials.json
+**/local.settings.json
 *.egg-info/
 dist/
 build/

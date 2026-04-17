@@ -1,8 +1,8 @@
 {
   "meta": {
-    "version": "1.0",
-    "disclaimer_zh": "本文件用于在系统内对齐常见国标与 GDPR 概念，便于规则设计与审计引用；不构成法律意见，落地前须由法务与数据安全部门审定。",
-    "disclaimer_en": "Technical alignment reference for GB standards and GDPR; not legal advice."
+    "version": "1.1",
+    "disclaimer_zh": "本文件用于在系统内对齐常见国标与 GDPR 概念，便于规则设计与审计引用；不构成法律意见，落地前须由法务与数据安全部门审定。可选标准全量 id 见 app/frameworks.py 的 STANDARDS_REGISTRY。",
+    "disclaimer_en": "Technical alignment reference for GB standards and GDPR; not legal advice. Selectable standard ids: STANDARDS_REGISTRY in app/frameworks.py."
   },
   "referenced_standards": [
     {
@@ -24,6 +24,41 @@
       "code": "GDPR",
       "title_zh": "General Data Protection Regulation (EU)",
       "topics_zh": ["personal data (Art.4)", "lawfulness (Art.6)", "special categories (Art.9)", "data minimisation"]
+    },
+    {
+      "code": "UK GDPR + DPA 2018",
+      "title_zh": "英国数据保护（UK GDPR 与《2018 数据保护法》）",
+      "topics_zh": ["与欧盟 GDPR 并行评估", "英国 ICO 执法", "跨境与充分性认定"]
+    },
+    {
+      "code": "APPI",
+      "title_zh": "日本个人信息保护法",
+      "topics_zh": ["个人情报", "要配慮個人情報", "第三者提供・跨境"]
+    },
+    {
+      "code": "PIPA (KR)",
+      "title_zh": "韩国个人信息保护法",
+      "topics_zh": ["个人信息与敏感信息", "收集利用", "去标识化"]
+    },
+    {
+      "code": "HIPAA",
+      "title_zh": "美国 HIPAA（PHI）",
+      "topics_zh": ["受保护健康信息", "覆盖实体与业务伙伴", "Privacy / Security Rule"]
+    },
+    {
+      "code": "US Fed Cyber / CISA context",
+      "title_zh": "美国联邦网络安全与关键基础设施（CISA 等指引语境）",
+      "topics_zh": ["关键基础设施", "网络安全事件与信息共享", "与 NIST 控制基线常一并评估"]
+    },
+    {
+      "code": "NIST CSF",
+      "title_zh": "NIST 网络安全框架",
+      "topics_zh": ["Identify / Protect / Detect / Respond / Recover", "自愿性控制参考"]
+    },
+    {
+      "code": "PCI DSS",
+      "title_zh": "支付卡行业数据安全标准",
+      "topics_zh": ["持卡人数据环境", "行业合规非单一成文法"]
     }
   ],
   "levels": {

@@ -8,20 +8,23 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+# Prefer values from project .env so a blank shell/user env var does not block the key.
+load_dotenv(BASE_DIR / ".env", override=True)
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup
 
 from app.ai_enhance import enhance_classified_fields
-from app.classifier import classify_fields, load_tag_levels
+from app.classifier import classify_fields, load_tag_levels, rollup_category_counts
 from app.frameworks import (
     applied_frameworks_label,
+    list_countries_for_api,
     list_standards_for_api,
-    parse_frameworks_param,
-    validate_framework_selection,
+    normalize_country_param,
+    resolve_classify_frameworks,
 )
 from app.ingest import sniff_and_parse
 from app.settings import ai_enhancement_configured, public_ai_status, get_ai_settings
@@ -36,10 +39,15 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
+    raw = json.dumps(list_standards_for_api(), ensure_ascii=False)
+    standards_embed = Markup(raw.replace("</", "<\\/"))
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"title": "\u6570\u636e\u5206\u7c7b\u5206\u7ea7\uff08\u56fd\u6807/GDPR\u5bf9\u9f50\u6f14\u793a\uff09"},
+        {
+            "title": "\u6570\u636e\u5206\u7c7b\u5206\u7ea7\uff08\u56fd\u6807/GDPR\u5bf9\u9f50\u6f14\u793a\uff09",
+            "standards_embed_json": standards_embed,
+        },
     )
 
 
@@ -57,15 +65,32 @@ async def api_standards() -> JSONResponse:
     return JSONResponse(list_standards_for_api())
 
 
+@app.get("/api/countries")
+async def api_countries() -> JSONResponse:
+    """Country / region list with default framework ids; meta from country_frameworks.json."""
+    p = BASE_DIR / "app" / "rules" / "country_frameworks.json"
+    data: dict
+    if p.is_file():
+        with p.open(encoding="utf-8") as f:
+            data = json.load(f)
+    else:
+        data = {"meta": {}}
+    data["countries"] = list_countries_for_api()
+    return JSONResponse(data)
+
+
 async def _build_classify_response(
     fields: list,
     fw_sel,
     want_ai: bool,
     progress: Callable[[int, str], Awaitable[None]] | None,
+    country_iso: str | None = None,
 ) -> ClassifyResponse:
     if progress:
         await progress(8, "\u89c4\u5219\u5f15\u64ce\u5206\u7c7b\u4e2d\u2026")
-    classified, summary = classify_fields(fields, frameworks=fw_sel)
+    classified, summary, category_summary, category_labels, tag_labels_zh = classify_fields(
+        fields, frameworks=fw_sel
+    )
     ai_applied = False
     ai_model = None
     ai_provider = None
@@ -91,6 +116,7 @@ async def _build_classify_response(
         for c in classified:
             k = str(c.level)
             summary[k] = summary.get(k, 0) + 1
+        category_summary = rollup_category_counts(classified)
         ai_applied = True
         s_ai = get_ai_settings()
         ai_model = s_ai.model
@@ -100,6 +126,10 @@ async def _build_classify_response(
     return ClassifyResponse(
         fields=classified,
         summary=summary,
+        category_summary=category_summary,
+        category_labels=category_labels,
+        tag_labels_zh=tag_labels_zh,
+        country=country_iso,
         applied_frameworks=applied_frameworks_label(fw_sel),
         ai_enhancement_applied=ai_applied,
         ai_model=ai_model,
@@ -111,6 +141,7 @@ async def _build_classify_response(
 async def api_classify(
     file: UploadFile = File(...),
     frameworks: str | None = Form(default=None),
+    country: str | None = Form(default=None),
     ai_enhance: str | None = Form(default=None),
     stream_progress: str | None = Form(default=None),
 ) -> JSONResponse | StreamingResponse:
@@ -123,9 +154,14 @@ async def api_classify(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
-    fw_sel = parse_frameworks_param(frameworks)
+    country_iso: str | None = None
+    if (country or "").strip():
+        try:
+            country_iso = normalize_country_param(country)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e)) from e
     try:
-        validate_framework_selection(fw_sel)
+        fw_sel = resolve_classify_frameworks(frameworks, country)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e)) from e
 
@@ -145,7 +181,9 @@ async def api_classify(
 
             async def worker() -> ClassifyResponse:
                 try:
-                    return await _build_classify_response(fields, fw_sel, want_ai, reporter)
+                    return await _build_classify_response(
+                        fields, fw_sel, want_ai, reporter, country_iso
+                    )
                 finally:
                     await queue.put(None)
 
@@ -181,7 +219,7 @@ async def api_classify(
             },
         )
 
-    body = await _build_classify_response(fields, fw_sel, want_ai, None)
+    body = await _build_classify_response(fields, fw_sel, want_ai, None, country_iso)
     return JSONResponse(content=body.model_dump(mode="json", by_alias=True))
 
 

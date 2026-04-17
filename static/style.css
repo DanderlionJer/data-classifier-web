@@ -56,6 +56,34 @@ body {
   gap: 0.75rem;
 }
 
+.country-row {
+  width: 100%;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.08);
+}
+.country-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+.country-select {
+  width: 100%;
+  max-width: 28rem;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.country-hint {
+  margin: 0.5rem 0 0;
+}
+
 .file input { display: none; }
 .file span {
   display: inline-block;
@@ -93,12 +121,17 @@ body {
 .status { margin: 0.75rem 0 0; min-height: 1.5rem; color: var(--muted); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chips-cat { margin-top: 0.25rem; }
 .chip {
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
   font-size: 0.85rem;
   background: var(--bg);
   border: 1px solid var(--border);
+}
+.chip-cat {
+  border-color: rgba(61, 139, 253, 0.45);
+  background: rgba(61, 139, 253, 0.12);
 }
 
 .badge {
@@ -137,6 +170,12 @@ body {
 .grid tbody tr:hover { background: rgba(61, 139, 253, 0.06); }
 .grid code { font-size: 0.85em; color: #b0bec5; }
 .rationale { color: var(--muted); max-width: 28rem; }
+.categories-cell {
+  color: var(--text);
+  max-width: 16rem;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
 
 .standards-fieldset {
   border: 1px solid var(--border);
