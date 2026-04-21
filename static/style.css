@@ -191,15 +191,45 @@ body {
   color: var(--muted);
 }
 .standards-fieldset .chk {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-right: 1rem;
-  margin-top: 0.35rem;
-  font-size: 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.88rem;
   cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
 }
-.standards-fieldset input { cursor: pointer; }
+.standards-fieldset .chk:hover {
+  background: rgba(61, 139, 253, 0.06);
+}
+.standards-fieldset .standard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.4;
+}
+.standards-fieldset .standard-line1 strong {
+  color: var(--accent);
+  font-weight: 600;
+}
+.standards-fieldset .standard-line-en {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.standards-fieldset .standard-line-meta {
+  font-size: 0.8rem;
+  color: #7a8fa3;
+}
+.standards-fieldset input {
+  cursor: pointer;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+}
 
 
 .ai-enhance-wrap {

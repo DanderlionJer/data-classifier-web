@@ -555,9 +555,23 @@ def applied_frameworks_label(selected: frozenset[str] | None) -> list[str]:
     return sorted(selected)
 
 
+def _summarize_country_labels_zh(labels: list[str], *, head: int = 5) -> str:
+    """Short line for UI: list few names then total count."""
+    if not labels:
+        return "未列入国家默认值（可按需手动勾选）"
+    if len(labels) <= head:
+        return "、".join(labels)
+    return "、".join(labels[:head]) + f" 等共 {len(labels)} 个国家/地区"
+
+
 def list_standards_for_api() -> list[dict[str, Any]]:
-    """Return registry for GET /api/standards; adds ``associated_country_ids`` per standard."""
+    """Return registry for GET /api/standards; adds country linkage fields per standard."""
     rows, _ = _load_country_tables()
+    country_label_zh: dict[str, str] = {}
+    for row in rows:
+        cid = row["id"]
+        lab = (row.get("label_zh") or "").strip()
+        country_label_zh[cid] = lab or cid
     fw_to_countries: dict[str, list[str]] = {}
     for row in rows:
         cid = row["id"]
@@ -568,6 +582,10 @@ def list_standards_for_api() -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for s in STANDARDS_REGISTRY:
         d = dict(s)
-        d["associated_country_ids"] = fw_to_countries.get(s["id"], [])
+        assoc = fw_to_countries.get(s["id"], [])
+        d["associated_country_ids"] = assoc
+        labels_zh = [country_label_zh.get(x, x) for x in assoc]
+        d["associated_country_labels_zh"] = labels_zh
+        d["associated_countries_summary_zh"] = _summarize_country_labels_zh(labels_zh)
         out.append(d)
     return out

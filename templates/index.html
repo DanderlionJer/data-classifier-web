@@ -143,21 +143,62 @@
       standardsLoading.remove();
       for (const s of list) {
         const lab = document.createElement("label");
-        lab.className = "chk";
-        const tip = (s.title_zh || "").trim() || (s.title_en || "").trim();
-        const assoc = (s.associated_country_ids || []).filter(Boolean);
-        if (tip) lab.title = tip;
-        if (assoc.length) {
-          lab.title = (lab.title ? lab.title + "\n" : "") + "\u5173\u8054\u56fd\u5bb6/\u5730\u533a: " + assoc.join(", ");
+        lab.className = "chk standard-row";
+        const code = (s.code || s.id || "").trim();
+        const zh = (s.title_zh || "").trim();
+        const en = (s.title_en || "").trim();
+        const summary =
+          (s.associated_countries_summary_zh || "").trim() ||
+          "\u672a\u5217\u5165\u56fd\u5bb6\u9ed8\u8ba4\u503c\uff08\u53ef\u6309\u9700\u624b\u52a8\u52fe\u9009\uff09";
+        const parts = [];
+        if (zh) {
+          parts.push(code ? code + "\u2014" + zh : zh);
+        } else if (code) {
+          parts.push(code);
         }
+        const mainLine = parts.length ? parts.join(" ") : (s.id || "");
+        const tipLines = [];
+        if (mainLine) tipLines.push(mainLine);
+        if (en) tipLines.push(en);
+        tipLines.push("\u9002\u7528\u56fd\u5bb6/\u5730\u533a\uff1a" + summary);
+        const assocIds = (s.associated_country_ids || []).filter(Boolean);
+        if (assocIds.length) {
+          tipLines.push("ISO: " + assocIds.join(", "));
+        }
+        lab.title = tipLines.join("\n");
+
         const inp = document.createElement("input");
         inp.type = "checkbox";
         inp.name = "fw";
         inp.value = s.id;
+        const body = document.createElement("span");
+        body.className = "standard-body";
+        const l1 = document.createElement("span");
+        l1.className = "standard-line1";
+        const strong = document.createElement("strong");
+        strong.textContent = code || s.id;
+        l1.appendChild(strong);
+        if (zh) {
+          l1.appendChild(document.createTextNode(" \u2014 " + zh));
+        }
+        body.appendChild(l1);
+        if (en) {
+          const l2 = document.createElement("span");
+          l2.className = "standard-line-en";
+          l2.textContent = en;
+          body.appendChild(l2);
+        }
+        const l3 = document.createElement("span");
+        l3.className = "standard-line-meta";
+        l3.textContent =
+          "\u9002\u7528\u56fd\u5bb6/\u5730\u533a\uff1a" + summary;
+        body.appendChild(l3);
+
         lab.appendChild(inp);
-        lab.appendChild(document.createTextNode(" " + (s.code || s.id)));
+        lab.appendChild(body);
         standardsFieldset.appendChild(lab);
       }
+      applyCountryToStandards();
     }
 
     function applyCountryToStandards() {
@@ -231,6 +272,7 @@
           countrySelect.dataset.wired = "1";
           countrySelect.addEventListener("change", applyCountryToStandards);
         }
+        applyCountryToStandards();
       } catch (e) {
         console.warn(e);
         countrySelect.innerHTML =
