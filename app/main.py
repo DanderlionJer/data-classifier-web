@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Awaitable, Callable
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -11,8 +12,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Prefer values from project .env so a blank shell/user env var does not block the key.
 load_dotenv(BASE_DIR / ".env", override=True)
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
@@ -26,6 +27,7 @@ from app.frameworks import (
     normalize_country_param,
     resolve_classify_frameworks,
 )
+from app.export_result import classify_response_to_csv, classify_response_to_xlsx
 from app.ingest import sniff_and_parse
 from app.settings import ai_enhancement_configured, public_ai_status, get_ai_settings
 from app.models import ClassifyResponse
@@ -88,8 +90,11 @@ async def _build_classify_response(
 ) -> ClassifyResponse:
     if progress:
         await progress(8, "\u89c4\u5219\u5f15\u64ce\u5206\u7c7b\u4e2d\u2026")
-    classified, summary, category_summary, category_labels, tag_labels_zh = classify_fields(
-        fields, frameworks=fw_sel
+    # Run rule engine in a thread so the event loop can flush SSE progress on large files.
+    loop = asyncio.get_running_loop()
+    classified, summary, category_summary, category_labels, tag_labels_zh = await loop.run_in_executor(
+        None,
+        lambda: classify_fields(fields, frameworks=fw_sel),
     )
     ai_applied = False
     ai_model = None
@@ -221,6 +226,38 @@ async def api_classify(
 
     body = await _build_classify_response(fields, fw_sel, want_ai, None, country_iso)
     return JSONResponse(content=body.model_dump(mode="json", by_alias=True))
+
+
+@app.post("/api/export")
+async def api_export(
+    body: ClassifyResponse,
+    export_format: str = Query("xlsx", alias="format"),
+) -> Response:
+    """Export last classify response as Excel (.xlsx) or CSV (UTF-8 with BOM)."""
+    fmt = (export_format or "xlsx").strip().lower()
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    if fmt == "xlsx":
+        raw = classify_response_to_xlsx(body)
+        name = f"data-classifier-{ts}.xlsx"
+        return Response(
+            content=raw,
+            media_type=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+            headers={"Content-Disposition": f'attachment; filename="{name}"'},
+        )
+    if fmt == "csv":
+        raw = classify_response_to_csv(body)
+        name = f"data-classifier-{ts}.csv"
+        return Response(
+            content=raw,
+            media_type="text/csv; charset=utf-8",
+            headers={"Content-Disposition": f'attachment; filename="{name}"'},
+        )
+    raise HTTPException(
+        status_code=422,
+        detail="format must be xlsx or csv",
+    )
 
 
 @app.get("/api/ai-status")

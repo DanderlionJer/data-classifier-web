@@ -65,7 +65,15 @@
     </section>
 
     <section class="card full" id="result-card" hidden>
-      <h2>结果</h2>
+      <div class="result-head">
+        <h2>结果</h2>
+        <div class="export-toolbar" id="export-toolbar" aria-label="导出结果">
+          <span class="export-label">导出</span>
+          <button type="button" class="btn secondary" id="export-json" disabled>JSON</button>
+          <button type="button" class="btn secondary" id="export-xlsx" disabled>Excel</button>
+          <button type="button" class="btn secondary" id="export-csv" disabled>CSV</button>
+        </div>
+      </div>
       <div class="table-wrap">
         <table class="grid" id="grid">
           <thead>
@@ -360,6 +368,95 @@
     loadStandards();
     loadAiStatus();
 
+    let lastClassifyResult = null;
+    const exportJsonBtn = document.getElementById("export-json");
+    const exportXlsxBtn = document.getElementById("export-xlsx");
+    const exportCsvBtn = document.getElementById("export-csv");
+
+    function setExportEnabled(on) {
+      if (exportJsonBtn) exportJsonBtn.disabled = !on;
+      if (exportXlsxBtn) exportXlsxBtn.disabled = !on;
+      if (exportCsvBtn) exportCsvBtn.disabled = !on;
+    }
+
+    function exportFilenameStem() {
+      const d = new Date();
+      const p = (n) => String(n).padStart(2, "0");
+      return (
+        d.getFullYear() +
+        p(d.getMonth() + 1) +
+        p(d.getDate()) +
+        "-" +
+        p(d.getHours()) +
+        p(d.getMinutes()) +
+        p(d.getSeconds())
+      );
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportAsJson() {
+      if (!lastClassifyResult) return;
+      const stem = exportFilenameStem();
+      const blob = new Blob([JSON.stringify(lastClassifyResult, null, 2)], {
+        type: "application/json;charset=utf-8",
+      });
+      downloadBlob(blob, "data-classifier-" + stem + ".json");
+    }
+
+    async function exportViaApi(format) {
+      if (!lastClassifyResult) return;
+      const stem = exportFilenameStem();
+      const url = new URL("api/export", apiRootUrl());
+      url.searchParams.set("format", format);
+      let res;
+      try {
+        res = await fetch(url.href, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(lastClassifyResult),
+          credentials: "same-origin",
+        });
+      } catch (e) {
+        statusEl.textContent = "\u5bfc\u51fa\u5931\u8d25\uff1a\u7f51\u7edc\u9519\u8bef";
+        console.error(e);
+        return;
+      }
+      if (!res.ok) {
+        let det = "";
+        try {
+          const j = await res.json();
+          det =
+            typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail || "");
+        } catch (_) {
+          det = "HTTP " + res.status;
+        }
+        statusEl.textContent = "\u5bfc\u51fa\u5931\u8d25\uff1a" + det;
+        return;
+      }
+      const blob = await res.blob();
+      const ext = format === "csv" ? ".csv" : ".xlsx";
+      downloadBlob(blob, "data-classifier-" + stem + ext);
+    }
+
+    if (exportJsonBtn) {
+      exportJsonBtn.addEventListener("click", exportAsJson);
+    }
+    if (exportXlsxBtn) {
+      exportXlsxBtn.addEventListener("click", () => exportViaApi("xlsx"));
+    }
+    if (exportCsvBtn) {
+      exportCsvBtn.addEventListener("click", () => exportViaApi("csv"));
+    }
 
     function levelClass(lv) {
       const n = Number(lv);
@@ -456,6 +553,8 @@
       categorySummaryCard.hidden = true;
       resultCard.hidden = true;
       gridBody.innerHTML = "";
+      lastClassifyResult = null;
+      setExportEnabled(false);
 
       const fd = new FormData();
       fd.append("file", f);
@@ -502,6 +601,9 @@
           data = await res.json();
         }
         hideProgress();
+
+        lastClassifyResult = data;
+        setExportEnabled(true);
 
         const af = (data.applied_frameworks || []).join(", ");
         const afNote = af ? "\uff08\u6807\u51c6\uff1a" + af + "\uff09" : "";

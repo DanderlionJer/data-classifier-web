@@ -49,6 +49,28 @@ body {
 .card.full { grid-column: 1 / -1; }
 .card h2 { margin: 0 0 1rem; font-size: 1.1rem; font-weight: 600; }
 
+.result-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+.result-head h2 { margin: 0; }
+
+.export-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.export-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-right: 0.25rem;
+}
+
 .form {
   display: flex;
   flex-wrap: wrap;
@@ -111,6 +133,19 @@ body {
   font-weight: 600;
 }
 .btn.primary:hover { filter: brightness(1.08); }
+.btn.secondary {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn.secondary:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn.secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .btn.link {
   background: transparent;
   color: var(--accent);
