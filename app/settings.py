@@ -16,6 +16,9 @@ class AISettings:
     timeout_sec: float
     batch_size: int
     max_comment_len: int
+    max_rationale_len: int
+    max_request_bytes: int
+    max_concurrent_batches: int
     anthropic_version: str
 
 
@@ -85,9 +88,22 @@ def get_ai_settings() -> AISettings:
     model = model_env if model_env else _default_model(provider)
 
     timeout_sec = float(os.environ.get("DATA_CLASSIFIER_AI_TIMEOUT_SEC") or "120")
-    batch_size = max(5, min(80, int(os.environ.get("DATA_CLASSIFIER_AI_BATCH_SIZE") or "40")))
+    # Smaller default batches avoid huge JSON bodies (proxy / API limits, "network error").
+    batch_size = max(1, min(80, int(os.environ.get("DATA_CLASSIFIER_AI_BATCH_SIZE") or "15")))
     max_comment_len = max(
         100, min(2000, int(os.environ.get("DATA_CLASSIFIER_AI_MAX_COMMENT_LEN") or "400"))
+    )
+    max_rationale_len = max(
+        80, min(1200, int(os.environ.get("DATA_CLASSIFIER_AI_MAX_RATIONALE_LEN") or "380"))
+    )
+    # Cap serialized user message size (UTF-8); split batches when exceeded.
+    max_request_bytes = max(
+        16_384,
+        min(2_000_000, int(os.environ.get("DATA_CLASSIFIER_AI_MAX_REQUEST_BYTES") or "98304")),
+    )
+    max_concurrent_batches = max(
+        1,
+        min(16, int(os.environ.get("DATA_CLASSIFIER_AI_MAX_CONCURRENCY") or "3")),
     )
 
     return AISettings(
@@ -98,6 +114,9 @@ def get_ai_settings() -> AISettings:
         timeout_sec=timeout_sec,
         batch_size=batch_size,
         max_comment_len=max_comment_len,
+        max_rationale_len=max_rationale_len,
+        max_request_bytes=max_request_bytes,
+        max_concurrent_batches=max_concurrent_batches,
         anthropic_version=anthropic_version,
     )
 

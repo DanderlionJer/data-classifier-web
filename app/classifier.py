@@ -14,13 +14,17 @@ Judgment order (per field):
 
    removed by suppression.
 
-3. After all rules run, ``suppresses`` on rules is applied in descending ``priority``
+3. After all rules run, ``suppresses`` on rules is applied in descending *effective* priority
 
    among *matched* rules only: a higher-priority match may drop tags listed in
 
    ``suppresses`` (e.g. drop generic ``identifier_technical`` when a passport rule
 
-   matched). Final level = max of remaining tag levels.
+   matched). When multiple compliance frameworks are selected and ``EO14117`` is
+
+   among them, rules mapped to ``EO14117`` receive a small priority boost for this
+
+   step only. Final level = max of remaining tag levels.
 
 4. No cell values, no cross-row context, no ML — only strings on this field row.
 
@@ -40,7 +44,11 @@ from typing import Any
 
 
 
-from app.frameworks import enrich_rules_frameworks, filter_rules_by_frameworks
+from app.frameworks import (
+    effective_rule_priority,
+    enrich_rules_frameworks,
+    filter_rules_by_frameworks,
+)
 from app.models import ClassifiedField, DataCategory, FieldDescriptor, RuleMatch
 
 
@@ -366,9 +374,11 @@ def _apply_suppressions(
 
     rules_by_id: dict[str, dict[str, Any]],
 
+    frameworks: frozenset[str] | None,
+
 ) -> tuple[set[str], set[str]]:
 
-    """Drop tags listed in ``suppresses`` using matched rules' priority (high first)."""
+    """Drop tags listed in ``suppresses`` using effective priority (high first)."""
 
     suppressed: set[str] = set()
 
@@ -378,7 +388,7 @@ def _apply_suppressions(
 
         matched_ids,
 
-        key=lambda rid: int(rules_by_id.get(rid, {}).get("priority", 0)),
+        key=lambda rid: effective_rule_priority(rules_by_id.get(rid, {}), frameworks),
 
         reverse=True,
 
@@ -413,6 +423,8 @@ def classify_field(
     category_labels: dict[str, str],
 
     tag_labels_zh: dict[str, str],
+
+    frameworks: frozenset[str] | None = None,
 
 ) -> ClassifiedField:
 
@@ -472,7 +484,7 @@ def classify_field(
 
 
 
-    tags, suppressed = _apply_suppressions(matches, tags, rules_by_id)
+    tags, suppressed = _apply_suppressions(matches, tags, rules_by_id, frameworks)
 
 
 
@@ -580,6 +592,7 @@ def classify_fields(
             tag_to_category,
             category_labels,
             tag_labels_zh,
+            frameworks,
         )
         for f in fields
     ]

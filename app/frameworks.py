@@ -46,6 +46,10 @@ FW_CO_PDPA = "CO_PDPA"
 FW_US_CA_CPRA = "US_CA_CPRA"
 
 FW_EO14117 = "EO14117"
+
+# When multiple frameworks are selected and EO14117 is among them, rules that map
+# to EO14117 get this boost for suppression ordering only (see effective_rule_priority).
+EO14117_PRIORITY_BOOST_WHEN_MULTI = 5
 FW_US_HIPAA = "US_HIPAA"
 FW_US_GLBA = "US_GLBA"
 FW_US_COPPA = "US_COPPA"
@@ -281,6 +285,7 @@ STANDARDS_REGISTRY: list[dict[str, str]] = [
         "code": "EO 14117",
         "title_zh": "美国第14117号行政令（敏感个人数据 / 关注国语境）",
         "title_en": "US Executive Order 14117 (sensitive data / countries of concern)",
+        "scope_note_zh": "本工具为字段/元数据级粗分类，不单独实现 CPI 组合、linked/linkable 判定、bulk 门槛或政府相关数据分层。与多标准并选时，对带 EO14117 的规则在标签抑制链上略提高优先级。",
     },
     {
         "id": FW_US_HIPAA,
@@ -514,6 +519,28 @@ def parse_frameworks_param(raw: str | None) -> frozenset[str] | None:
     except json.JSONDecodeError:
         pass
     return frozenset(x.strip() for x in s.split(",") if x.strip())
+
+
+def effective_rule_priority(
+    rule: dict[str, Any],
+    selected: frozenset[str] | None,
+) -> int:
+    """Base ``priority`` from the rule, optionally boosted for EO14117 in multi-select.
+
+    When the caller selected **more than one** framework and **EO14117** is among
+    them, rules whose ``frameworks`` list includes ``EO14117`` get a small increase.
+    This only affects **suppression** ordering in ``app.classifier`` (higher
+    effective priority runs first), not which rules match.
+    """
+    p = int(rule.get("priority", 0))
+    if not selected or len(selected) < 2:
+        return p
+    if FW_EO14117 not in selected:
+        return p
+    fws = rule.get("frameworks")
+    if fws and FW_EO14117 in fws:
+        return p + EO14117_PRIORITY_BOOST_WHEN_MULTI
+    return p
 
 
 def filter_rules_by_frameworks(

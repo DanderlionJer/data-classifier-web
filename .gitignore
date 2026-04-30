@@ -23,3 +23,6 @@ build/
 ~$*.xlsx
 .DS_Store
 Thumbs.db
+
+# Cursor IDE (do not publish editor metadata)
+.cursor/
